@@ -1,0 +1,6 @@
+{
+  "group_blacklist":[],
+  "webhook": false,
+  "webhook_post_url": "http://localhost:5000",
+  "webhook_timeout": 10
+}
