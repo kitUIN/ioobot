@@ -4,6 +4,7 @@ import re
 
 from .dbs import *
 from .message import Send
+from .picsearch import PicSearch
 from .sysinfo import *
 
 renping = {}  # 人品记录
@@ -143,20 +144,20 @@ class Command:
                         if At_Content_front == '#增加管理员':
                             for qq in atqqs:
                                 if qq in self.db['admins']:
-                                    sendMsg.send_text(self.ctx, '{}已经是管理员了'.format(qq))
-                                    sendMsg.send_text(self.ctx, '增加管理员失败')
+                                    sendMsg.send_text(self.ctx, '{}已经是机器人管理员了'.format(qq))
+                                    sendMsg.send_text(self.ctx, '增加机器人管理员失败')
                                     return
                                 self.db['managers'].append(qq)
-                            ret = '增加管理员成功'
+                            ret = '增加机器人管理员成功'
 
                         elif At_Content_front == '#删除管理员':
                             for qq in atqqs:
                                 try:
                                     self.db['managers'].remove(qq)
                                 except:
-                                    sendMsg.send_text(self.ctx, '删除管理员出错')
+                                    sendMsg.send_text(self.ctx, '删除机器人管理员出错')
                                     return
-                            ret = '删除管理员成功'
+                            ret = '删除机器人管理员成功'
                         else:
                             sendMsg.send_text(self.ctx, '无此命令')
                             return
@@ -175,10 +176,24 @@ class Command:
             sendMsg.send_text(self.ctx, '找不到这个命令了，试试#帮助 吧')
             return
 
-    def cmd(self, group, lv):  # todo 迁移网易云识别，setu统计，
+    def cmd(self, group, lv):  # todo 迁移 网易云识别，setu统计，
         if self.ctx.Content == '#sysinfo' or self.ctx.Content == '#运行状态' or self.ctx.Content == '#系统信息':  # 运行状态
             msg = sysinfo()
             sendMsg.send_text(self.ctx, msg)
+            return
+        elif self.ctx.Content == '#以图搜图':
+            pic = PicSearch(self.ctx)
+            if self.ctx.PicUrl != '':
+                pic.pic_search(self.ctx.PicUrl)
+            else:
+                sendMsg.send_text(self.ctx, '缺少图片呢')
+            return
+        elif self.ctx.Content == '#以图搜番':
+            pic = PicSearch(self.ctx)
+            if self.ctx.PicUrl != '':
+                pic.anime_search(self.ctx.PicUrl)
+            else:
+                sendMsg.send_text(self.ctx, '缺少图片呢')
             return
         elif self.ctx.Content[:2] == '#v':
             msg = send_ver(self.ctx)
@@ -230,13 +245,15 @@ class Command:
             self.db['callqq'] = self.ctx.FromUin
             self.db['type'] = 'temp'
         data = group_config.search(Q['GroupId'] == group_id)
+        self.db_raw = data[0]
+        self.db.update(data[0])  # 载入数据
         # -------------------权限等级分层-----------------------------------
         lv = 3  # 群友
         if self.db['callqq'] == config['superAdmin']:  # 鉴权(等级高的写前面)
             lv = 0  # root
-        elif self.db['callqq'] in self.db['admins']:
+        elif self.db['callqq'] in data[0]['admins']:
             lv = 1  # 机器人指定管理员
-        elif self.db['callqq'] in self.db['managers']:
+        elif self.db['callqq'] in data[0]['managers']:
             lv = 2  # 群管理员
         # ------------------------------------------------------
         if data:  # 查询group数据库数据

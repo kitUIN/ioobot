@@ -2,6 +2,7 @@ import base64
 
 from PicImageSearch import SauceNAO, TraceMoe
 from loguru import logger
+
 from .message import Send
 
 SendMsg = Send()
@@ -43,9 +44,11 @@ class PicSearch:
             saucenao = SauceNAO(numres=1)
             res = saucenao.search(url)
             raw = res.raw[0]
+            logger.info('开始搜索')
             if raw.similarity > 80:
+                logger.info('搜索成功')
                 msg = '缩略图展示↑↑↑\r\n标题:{}\r\n作者：{}\r\n作者id：https://www.pixiv.net/users/{}\r\n作品id：{}\r\n直通车：{}\r\n'.format(
-                    raw.title, raw.author, raw.member_id, raw.pixiv_id, raw.url)
+                    raw.title, raw.author, raw.member_id, raw.pixiv_id, raw.urls)
                 SendMsg.send_pic(self.ctx, msg, raw.thumbnail, False, True)
                 return
             else:

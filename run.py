@@ -11,7 +11,8 @@ import botoy.decorators as deco
 from botoy import FriendMsg, GroupMsg, EventMsg
 from botoy.refine import *
 from loguru import logger
-from .ioolib import *
+
+from ioolib import *
 
 # ------------------正则------------------
 pattern_setu = '来(.*?)[点丶份张幅](.*?)的?(|r18)[色瑟涩🐍][图圖🤮]'
@@ -19,12 +20,13 @@ pattern_command = '#(.*?)'
 # ------------------db-------------------------
 # ---------------------------------------------
 botdata = event.Getdata()
-
+SendMsg = Send()
 
 # ---------------------------ctx中间加工---------------------------
 
 @bot.group_context_use
 def Pic(ctx: GroupMsg):
+    ctx.PicUrl = ''
     if ctx.MsgType == 'PicMsg':
         ctx.PicUrl = refine_pic_group_msg(ctx).GroupPic[0].Url  # 图片地址
         logger.info(ctx.PicUrl)
@@ -38,41 +40,75 @@ def Pic(ctx: GroupMsg):
 # -----------------------消息显示--------------------------------------
 
 @bot.on_group_msg
-def receive_group_msg(ctx: GroupMsg):
+def group_msg(ctx: GroupMsg):
     # todo 完善xml，json，pic数据结构
-    msg = '\n消息类型:{}\n发送人:{}({})\n来自群:{}({})\n内容:{}\n时间:{}'.format(ctx.MsgType, ctx.FromNickName, ctx.FromUserId,
-                                                                   ctx.FromGroupName, ctx.FromGroupId, ctx.Content,
-                                                                   ctx.MsgTime)
-    logger.debug(msg)
-
-
-@bot.on_friend_msg()
-def receive_friend_msg(ctx: FriendMsg):
-    msg = '\n消息类型:{}\n发送人:{}\n内容:{}'.format(ctx.MsgType, ctx.FromUin, ctx.Content)
-    logger.debug(msg)
-
-
-@bot.on_event()
-def receive_events(ctx: EventMsg):
-    msg = '\n事件名称:{}\n具体信息:{}\n基本信息:{}'.format(ctx.EventName, ctx.EventData, ctx.EventMsg)
-    logger.debug(msg)
-
-
-# ---------------------------识图指令---------------------------
-@bot.on_group_msg
-@deco.queued_up
-@deco.in_content('#以图搜番')
-def group_setu(ctx: GroupMsg):
-    pic = PicSearch(ctx)
-    pic.anime_search(ctx.url)
+    if ctx.MsgType == 'TextMsg':
+        msg = '\r\n消息类型:{}[文本]\r\n发送人:{}({})\r\n来自群:{}({})\r\n内容:{}\r\n时间:{}'.format(ctx.MsgType, ctx.FromNickName,
+                                                                                     ctx.FromUserId,
+                                                                                     ctx.FromGroupName, ctx.FromGroupId,
+                                                                                     ctx.Content,
+                                                                                     ctx.MsgTime)
+        logger.debug(msg)
+    elif ctx.MsgType == 'PicMsg':
+        msg = '\r\n消息类型:{}[图片]\r\n发送人:{}({})\r\n来自群:{}({})\r\n内容:{}\r\n图片:{}\r\n时间:{}'.format(ctx.MsgType,
+                                                                                              ctx.FromNickName,
+                                                                                              ctx.FromUserId,
+                                                                                              ctx.FromGroupName,
+                                                                                              ctx.FromGroupId,
+                                                                                              ctx.Content, ctx.PicUrl,
+                                                                                              ctx.MsgTime)
+        logger.debug(msg)
 
 
 @bot.on_friend_msg
+def friend_msg(ctx: FriendMsg):
+    msg = '\r\n消息类型:{}\r\n发送人:{}\r\n内容:{}'.format(ctx.MsgType, ctx.FromUin, ctx.Content)
+    logger.debug(msg)
+
+
+@bot.on_event
+def events(ctx: EventMsg):
+    msg = '\r\n事件名称:{}\r\n具体信息:{}\r\n基本信息:{}'.format(ctx.EventName, ctx.EventData, ctx.EventMsg)
+    logger.debug(msg)
+
+
+# -----------------------指令-----------------------------------------------
+@bot.on_friend_msg
 @deco.queued_up
-@deco.in_content('#以图搜图')
-def friend_setu(ctx: FriendMsg):
-    pic = PicSearch(ctx)
-    pic.pic_search(ctx.url)
+def receive_friend_msg(ctx: FriendMsg):  # 修改指令 前往/ioolib/command.py
+    if re.search(pattern_command, ctx.Content):
+        Command(ctx).main()
+
+
+@bot.on_group_msg
+@deco.queued_up
+def receive_group_msg(ctx: GroupMsg):
+    if re.search(pattern_command, ctx.Content):
+        Command(ctx).main()
+    else:
+        Command(ctx).cmd_fudu()
+
+
+@bot.on_group_msg
+@deco.ignore_botself
+@deco.equal_content('test')
+def test(ctx: GroupMsg):
+    SendMsg.send_pic(ctx,'标题:水着メルトwww.pixiv.net/artworks/76508807page:0作者:PDXenwww.pixiv.net/users/11945252','https://cdn.jsdelivr.net/gh/laosepi/setu/pics_original/76508807_p0.png')
+    # action.sendFriendText(ctx, ctx.master)
+
+
+'''
+@bot.on_group_msg
+@deco.ignore_botself
+@deco.equal_content('test')
+def test(ctx: GroupMsg):
+    logger.info(ctx.master)
+    # action.sendFriendText(ctx, ctx.master)
+def group_mm(ctx: GroupMsg):
+    action.sendGroupVoice(ctx.FromGroupId, voiceUrl='', voiceBase64Buf=tobase64('/home/android/pic/File0036.silk'))
+    time.sleep(1.1)
+    action.sendGroupVoice(ctx.FromGroupId, voiceUrl='', voiceBase64Buf=tobase64('/home/android/pic/File0040.silk'))
+'''
 
 
 # ---------------------------setu指令---------------------------
@@ -103,46 +139,6 @@ def receive_group_msg(ctx: GroupMsg):
         delay = random.randint(30, 60)
     time.sleep(delay)
     action.revokeGroupMsg(ctx.FromGroupId, ctx.MsgSeq, ctx.MsgRandom)
-
-
-# -----------------------指令-----------------------------------------------
-@bot.on_friend_msg()
-@deco.queued_up
-def receive_friend_msg(ctx: FriendMsg):  # 修改指令 前往/ioolib/command.py
-    if re.search(pattern_command, ctx.Content):
-        Command(ctx).main()
-
-
-@bot.on_group_msg
-@deco.queued_up
-def receive_group_msg(ctx: GroupMsg):
-    if re.search(pattern_command, ctx.Content):
-        Command(ctx).main()
-    else:
-        Command(ctx).cmd_fudu()
-
-
-@bot.on_group_msg
-@deco.ignore_botself
-@deco.equal_content('test')
-def test(ctx: GroupMsg):
-    action.sendGroupPic(ctx.FromGroupId, content='',
-                        picUrl='https://media.trace.moe/video/11887/%5BANK-Raws%26NatsuYuki%5D%20Kokoro%20Connect%20-%2005%20%28BDrip%201280x720%20x264%20AAC%29.mp4?t=1174.5&token=I7RtV-BVFDjvgwgPpUwFKw&mute')
-    # action.sendFriendText(ctx, ctx.master)
-
-
-'''
-@bot.on_group_msg
-@deco.ignore_botself
-@deco.equal_content('test')
-def test(ctx: GroupMsg):
-    logger.info(ctx.master)
-    # action.sendFriendText(ctx, ctx.master)
-def group_mm(ctx: GroupMsg):
-    action.sendGroupVoice(ctx.FromGroupId, voiceUrl='', voiceBase64Buf=tobase64('/home/android/pic/File0036.silk'))
-    time.sleep(1.1)
-    action.sendGroupVoice(ctx.FromGroupId, voiceUrl='', voiceBase64Buf=tobase64('/home/android/pic/File0040.silk'))
-'''
 
 
 # -----------------------权限信息通知-----------------------------------------------

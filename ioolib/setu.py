@@ -3,8 +3,9 @@ import os
 import random
 import re
 import time
-from tinydb.operations import add
+
 import requests
+from tinydb.operations import add
 
 from .dbs import *
 from .message import Send
@@ -154,10 +155,13 @@ class Setu:
                     if self.if_sent(data['url']):  # 判断是否发送过
                         continue
                     msg = self.build_msg(data['title'], data['pid'], data['author'], data['uid'], data['p'], '无~')
+                    logger.info(msg)
+                    logger.info(data['url'])
                     sendMsg.send_pic(self.ctx, msg, data['url'], False, self.db_config['at'])
                     self.api_1_realnum += 1
                 logger.info(
-                    '从loliconのapi获取到{}张setu  实际发送{}张'.format(setu_data['count'], self.api_1_realnum))  # 打印获取到多少条
+                    '从loliconのapi获取到{}张setu  实际发送{}张'.format(setu_data['count'], self.api_1_realnum))
+                # 打印获取到多少条
             else:
                 logger.warning('api1:{}'.format(res.status_code))
 

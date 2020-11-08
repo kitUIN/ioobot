@@ -52,7 +52,7 @@ def sysinfo():  # 获取系统信息
     cpu_info = get_cpu_info()
     mem_info = get_memory_info()
     up_time = uptime()
-    full_meg = '服务器:花与云\r\n线程：{}\r\n负载:{}%\r\n总内存:{}G\r\n已用内存:{}G\r\n空闲内存:{}G\r\n内存使用率:{}%\r\n'\
+    full_meg = '运行状况\r\n线程：{}\r\n负载:{}%\r\n总内存:{}G\r\n已用内存:{}G\r\n空闲内存:{}G\r\n内存使用率:{}%\r\n'\
                'swap:{}G\r\n已用swap:{}G\r\n空闲swap:{}G\r\nswap使用率:{}%\r\n'\
                '开机时间:{}\r\n当前时间:{}\r\n已运行时间:{}'.format(
                 cpu_info[4], cpu_info[5], mem_info[0], mem_info[1], mem_info[2], mem_info[3], mem_info[4], mem_info[5],
