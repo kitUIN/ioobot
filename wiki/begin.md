@@ -6,7 +6,8 @@ PS：测试环境:
 
 **1.下载项目或者克隆**  
 - `git clone https://github.com/kitUIN/ioobot.git`
-
+- 配置环境  
+- `pip3 install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple`
 **2.填写配置文件**  
 文件`config.json`
 ```
