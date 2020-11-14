@@ -3,7 +3,7 @@ import re
 import botoy.decorators as deco
 from botoy import Action, FriendMsg, GroupMsg, EventMsg
 
-from plugins.ioolib import Command
+from plugins.ioolib.command import Command
 
 # ------------------正则------------------
 pattern_command = '#(.*?)'
