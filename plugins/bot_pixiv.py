@@ -12,7 +12,7 @@ from plugins.ioolib.send import Send, tobase64
 _USERNAME = config["netease_username"]
 _PASSWORD = config["netease_password"]
 sendMsg = Send()
-pixiv_pattern = '#p(|ixiv)(.*?)'
+pixiv_pattern = '#p?(|ixiv) (.+)'
 
 
 class Pixiv:
@@ -47,8 +47,7 @@ def receive_friend_msg(ctx: FriendMsg):
 
 
 def receive_group_msg(ctx: GroupMsg):
-    pixiv_info = re.search(pixiv_pattern, ctx.Content)
-    logger.info(pixiv_info)
+    pixiv_info = re.match(pixiv_pattern, ctx.Content)
     if pixiv_info:
         if config['pixiv']:
             try:
