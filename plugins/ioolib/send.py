@@ -1,4 +1,6 @@
-from .dbs import action
+from .dbs import config
+from botoy import Action
+action = Action(qq=config['BotQQ'])
 
 
 class Send:

@@ -11,16 +11,14 @@ import botoy.decorators as deco
 from botoy import FriendMsg, GroupMsg, EventMsg
 from botoy.refine import *
 from loguru import logger
+from plugins.ioolib import *
 
-from ioolib import *
-
-# ------------------正则------------------
-pattern_setu = '来(.*?)[点丶份张幅](.*?)的?(|r18)[色瑟涩🐍][图圖🤮]'
 pattern_command = '#(.*?)'
-# ------------------db-------------------------
 # ---------------------------------------------
 botdata = event.Getdata()
 SendMsg = Send()
+bot.reload_plugins()
+
 
 # ---------------------------ctx中间加工---------------------------
 
@@ -30,7 +28,7 @@ def Pic(ctx: GroupMsg):
     if ctx.MsgType == 'PicMsg':
         ctx.PicUrl = refine_pic_group_msg(ctx).GroupPic[0].Url  # 图片地址
         logger.info(ctx.PicUrl)
-        ctx.Content = refine_pic_group_msg(ctx).Content  # 图片消息内容
+        ctx.PicContent = refine_pic_group_msg(ctx).Content  # 图片消息内容
         logger.info(ctx.Content)
     else:
         pass
@@ -75,15 +73,17 @@ def events(ctx: EventMsg):
 # -----------------------指令-----------------------------------------------
 @bot.on_friend_msg
 @deco.queued_up
+@deco.ignore_botself
 def receive_friend_msg(ctx: FriendMsg):  # 修改指令 前往/ioolib/command.py
-    if re.search(pattern_command, ctx.Content):
+    if re.match(pattern_command, ctx.Content):
         Command(ctx).main()
 
 
 @bot.on_group_msg
 @deco.queued_up
+@deco.ignore_botself
 def receive_group_msg(ctx: GroupMsg):
-    if re.search(pattern_command, ctx.Content):
+    if re.match(pattern_command, ctx.Content):
         Command(ctx).main()
     else:
         Command(ctx).cmd_fudu()
@@ -93,7 +93,8 @@ def receive_group_msg(ctx: GroupMsg):
 @deco.ignore_botself
 @deco.equal_content('test')
 def test(ctx: GroupMsg):
-    SendMsg.send_pic(ctx,'标题:水着メルトwww.pixiv.net/artworks/76508807page:0作者:PDXenwww.pixiv.net/users/11945252','https://cdn.jsdelivr.net/gh/laosepi/setu/pics_original/76508807_p0.png')
+    SendMsg.send_pic(ctx, '标题:水着メルトwww.pixiv.net/artworks/76508807page:0作者:PDXenwww.pixiv.net/users/11945252',
+                     'https://cdn.jsdelivr.net/gh/laosepi/setu/pics_original/76508807_p0.png')
     # action.sendFriendText(ctx, ctx.master)
 
 
@@ -111,71 +112,10 @@ def group_mm(ctx: GroupMsg):
 '''
 
 
-# ---------------------------setu指令---------------------------
-@bot.on_group_msg
-@deco.queued_up
-@deco.with_pattern(pattern_setu)
-def group_setu(ctx: GroupMsg):
-    group_info = re.search(pattern_setu, ctx.Content)  # 提取关键字
-    Setu(ctx, group_info[2], group_info[1], group_info[3]).main()
 
 
-@bot.on_friend_msg
-@deco.queued_up
-@deco.with_pattern(pattern_setu)
-def friend_setu(ctx: FriendMsg):
-    friend_info = re.search(pattern_setu, ctx.Content)  # 提取关键字
-    Setu(ctx, friend_info[2], friend_info[1], friend_info[3]).main()
 
 
-@bot.on_group_msg
-@deco.from_botself
-@deco.in_content('(.*?)REVOKE(.*?)')
-def receive_group_msg(ctx: GroupMsg):
-    delay = re.findall(r'REVOKE[(d+)]', ctx.Content)
-    if delay:
-        delay = min(int(delay[0]), 90)
-    else:
-        delay = random.randint(30, 60)
-    time.sleep(delay)
-    action.revokeGroupMsg(ctx.FromGroupId, ctx.MsgSeq, ctx.MsgRandom)
-
-
-# -----------------------权限信息通知-----------------------------------------------
-@bot.on_event
-def event(ctx: EventMsg):
-    admin_info = refine_group_admin_event_msg(ctx)
-    join_info = refine_group_join_event_msg(ctx)
-    if admin_info:
-        data_raw = group_config.search(Q['GroupId'] == admin_info.GroupID)
-        if data_raw:
-            if admin_info.Flag == 1:  # 变成管理员
-                logger.info('群:{} QQ:{}成为管理员'.format(admin_info.GroupID, admin_info.UserID))
-                if admin_info.UserID in data_raw[0]['managers']:  # 防止重叠
-                    data_raw[0]['managers'].remove[admin_info.UserID]
-                data_raw[0]['admins'].append(admin_info.UserID)
-            else:
-                logger.info('群:{} QQ:{}被取消管理员'.format(admin_info.GroupID, admin_info.UserID))
-                try:
-                    data_raw[0]['admins'].remove(admin_info.UserID)
-                except Exception as e:  # 出错就说明群信息不正确,重新获取
-                    logger.warning('从数据库删除管理员出错,尝试重新刷新群数据\r\n' + str(e))
-                    botdata.updateGroupData(admin_info.GroupID)
-                    return
-            group_config.update({'admins': data_raw[0]['admins'],
-                                 'managers': data_raw[0]['managers']},
-                                Q['GroupId'] == admin_info.GroupID)
-        else:  # 如果没数据就重新获取
-            botdata.updateGroupData(admin_info.GroupID)
-    elif join_info:
-        if join_info.UserID == config['BotQQ']:
-            logger.info('bot加入群{}'.format(join_info.FromUin))
-            botdata.updateGroupData(join_info.FromUin)
-        else:
-            logger.info('{}:{}加入群{}'.format(join_info.UserName, join_info.UserID, join_info.FromUin))
-    elif ctx.MsgType == 'ON_EVENT_GROUP_JOIN_SUCC':
-        logger.info('bot加入群{}'.format(ctx.FromUin))
-        botdata.updateGroupData(ctx.FromUin)
 
 
 @bot.when_disconnected(every_time=True)

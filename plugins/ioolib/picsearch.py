@@ -3,7 +3,7 @@ import base64
 from PicImageSearch import SauceNAO, TraceMoe
 from loguru import logger
 
-from .message import Send
+from .send import Send
 
 SendMsg = Send()
 

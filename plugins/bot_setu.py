@@ -1,16 +1,28 @@
 import base64
 import os
 import random
+
+from botoy.refine import refine_group_admin_event_msg, refine_group_join_event_msg
+from retrying import retry
 import re
+import pathlib
 import time
-
+import threading
+import time
 import requests
+from loguru import logger
 from tinydb.operations import add
+import botoy.decorators as deco
+from plugins.ioolib.dbs import Q,db_tmp,config,group_config,friend_config,Action
+from plugins.ioolib.send import Send
+from botoy import FriendMsg, GroupMsg,EventMsg
 
-from .dbs import *
-from .message import Send
-
+# ------------------正则------------------
+pattern_setu = '来(.*?)[点丶份张幅](.*?)的?(|r18)[色瑟涩🐍][图圖🤮]'
+# ---------------------------------------
 sendMsg = Send()
+action = Action(qq=config['BotQQ'])
+# ---------------------------------------
 
 
 class Setu:
@@ -310,3 +322,137 @@ class Setu:
                 tag=self.tag,
                 num=self.api_0_realnum + self.api_1_realnum + self.api_pixiv_realnum
             ), self.db_config['at_warning'])
+# ------------------------------权限db-------------
+class Getdata:
+    @staticmethod
+    def defaultdata(data):
+        data['managers'] = []  # 所有的管理者(可以设置bot功能的)
+        # -----------------------------------------------------
+        data['setuDefaultLevel'] = {'group': 1, 'temp': 3}  # 默认等级 0:正常 1:性感 2:色情 3:All
+        data['setuinfoLevel'] = {'group': 2, 'temp': 3}  # setu信息完整度(0:不显示图片信息)
+        data['original'] = {'group': False, 'temp': False}  # 是否原图
+        data['setu'] = {'group': True, 'temp': True}  # 色图功能开关
+        data['r18'] = {'group': False, 'temp': True}  # 是否开启r18
+        data['freq'] = 0  # 频率 (次)
+        data['refreshTime'] = 60  # 刷新时间 (s)
+        data['clearSentTime'] = 900  # 刷新sent时间 (s)
+        data['maxnum'] = {'group': 3, 'temp': 10}  # 一次最多数量
+        # data['MsgCount'] = {'text': 0, 'pic': 0, 'voice': 0}  # 消息数量
+        data['revoke'] = {'group': 20, 'temp': 0}  # 撤回消息延时(0为不撤回)
+        data['at'] = False  # @
+        data['at_warning'] = False  # @
+        data['showTag'] = True  # 显示tag
+        data['msg_inputError'] = '必须是小于3的数字哦~'  # 非int
+        data['msg_notFind'] = '淦 你的xp好奇怪啊'  # 没结果
+        data['msg_tooMuch'] = '要这么多色图你怎么不冲死呢¿'  # 大于最大值
+        data['msg_lessThan0'] = '¿¿¿'  # 小于0
+        data['msg_setuClosed'] = 'setu已关闭~'
+        data['msg_r18Closed'] = '未开启r18~'
+        data['msg_insufficient'] = '关于{tag}的图片只获取到{num}张'
+        data['msg_frequency'] = '本群每{time}s能调用{num}次,已经调用{num_call}次,离刷新还有{r_time}s'
+        # data['msg_'] = ''
+        # return data
+
+    def _updateData(self, data, group_id):
+        if group_config.search(Q['GroupId'] == group_id):
+            logger.info('群:{}已存在,更新数据~'.format(group_id))
+            group_config.update(data, Q['GroupId'] == group_id)
+        else:
+            self.defaultdata(data)
+            logger.info('群:{}不存在,插入数据~'.format(group_id))
+            group_config.insert(data)
+
+    @retry(stop_max_attempt_number=3, wait_random_max=2000)
+    def updateAllGroupData(self):
+        logger.info('开始更新所有群数据~')
+        data = action.getGroupList()
+        allgroups_get = [x['GroupId'] for x in data]
+        for group in data:
+            del group['GroupNotice']  # 删除不需要的key
+            admins = action.getGroupAdminList(group['GroupId'])
+            admins_QQid = [i['MemberUin'] for i in admins]
+            group['admins'] = admins_QQid  # 管理员列表
+            self._updateData(group, group['GroupId'])
+        allgroups_db = [i['GroupId'] for i in group_config.all()]
+        extraGroup = list(set(allgroups_db).difference(set(allgroups_get)))
+        if extraGroup:  # 多余的群
+            logger.info('数据库中多余群:{}'.format(extraGroup))
+            for groupid_del in extraGroup:
+                group_config.remove(Q['GroupId'] == groupid_del)
+                logger.info('已删除群:{}数据'.format(groupid_del))
+        logger.success('更新群信息成功~')
+        return
+
+    @retry(stop_max_attempt_number=3, wait_random_max=2000)
+    def updateGroupData(self, group_id: int):
+        logger.info('开始刷新群:{}的数据'.format(group_id))
+        data = action.getGroupList()
+        for group in data:
+            if group['GroupId'] == group_id:
+                del group['GroupNotice']  # 删除不需要的key
+                admins = action.getGroupAdminList(group_id)
+                admins_QQid = [i['MemberUin'] for i in admins]
+                group['admins'] = admins_QQid
+                logger.info('群:{}的admins:{}'.format(group_id, admins_QQid))
+                self._updateData(group, group['GroupId'])
+                return
+        logger.warning('群:{}不存在~'.format(group_id))
+
+# --------------指令-------------------------
+@deco.queued_up
+def receive_friend_msg(ctx: FriendMsg):
+    if not (ctx.Content is None):
+        friend_info = re.search(pattern_setu, ctx.Content)  # 提取关键字
+        if friend_info:
+            Setu(ctx, friend_info[2], friend_info[1], friend_info[3]).main()
+
+
+@deco.queued_up
+def receive_group_msg(ctx: GroupMsg):
+    group_info = re.search(pattern_setu, ctx.Content)  # 提取关键字
+    delay = re.findall(r'REVOKE[(d+)]', ctx.Content)
+    if group_info:
+        Setu(ctx, group_info[2], group_info[1], group_info[3]).main()
+    if delay:
+        delay = min(int(delay[0]), 90)
+        time.sleep(delay)
+        action.revokeGroupMsg(ctx.FromGroupId, ctx.MsgSeq, ctx.MsgRandom)
+
+
+botdata = Getdata()
+
+
+# -----------------------权限信息通知-----------------------------------------------
+def receive_events(ctx: EventMsg):
+    admin_info = refine_group_admin_event_msg(ctx)
+    join_info = refine_group_join_event_msg(ctx)
+    if admin_info:
+        data_raw = group_config.search(Q['GroupId'] == admin_info.GroupID)
+        if data_raw:
+            if admin_info.Flag == 1:  # 变成管理员
+                logger.info('群:{} QQ:{}成为管理员'.format(admin_info.GroupID, admin_info.UserID))
+                if admin_info.UserID in data_raw[0]['managers']:  # 防止重叠
+                    data_raw[0]['managers'].remove(admin_info.UserID)
+                data_raw[0]['admins'].append(admin_info.UserID)
+            else:
+                logger.info('群:{} QQ:{}被取消管理员'.format(admin_info.GroupID, admin_info.UserID))
+                try:
+                    data_raw[0]['admins'].remove(admin_info.UserID)
+                except Exception as e:  # 出错就说明群信息不正确,重新获取
+                    logger.warning('从数据库删除管理员出错,尝试重新刷新群数据\r\n' + str(e))
+                    botdata.updateGroupData(admin_info.GroupID)
+                    return
+            group_config.update({'admins': data_raw[0]['admins'],
+                                 'managers': data_raw[0]['managers']},
+                                Q['GroupId'] == admin_info.GroupID)
+        else:  # 如果没数据就重新获取
+            botdata.updateGroupData(admin_info.GroupID)
+    elif join_info:
+        if join_info.UserID == config['BotQQ']:
+            logger.info('bot加入群{}'.format(join_info.FromUin))
+            botdata.updateGroupData(join_info.FromUin)
+        else:
+            logger.info('{}:{}加入群{}'.format(join_info.UserName, join_info.UserID, join_info.FromUin))
+    elif ctx.MsgType == 'ON_EVENT_GROUP_JOIN_SUCC':
+        logger.info('bot加入群{}'.format(ctx.FromUin))
+        botdata.updateGroupData(ctx.FromUin)

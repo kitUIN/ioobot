@@ -3,7 +3,7 @@ import random
 import re
 
 from .dbs import *
-from .message import Send
+from .send import Send
 from .picsearch import PicSearch
 from .sysinfo import *
 
@@ -82,7 +82,7 @@ class Command:
             msg = self.ctx.Content
             if self.ctx.MsgType == 'PicMsg':
                 # try:
-                msg = self.ctx.Content
+                msg = self.ctx.PicContent
                 PicUrl = self.ctx.PicUrl
                 sendMsg.send_pic(self.ctx, msg, PicUrl)
             else:
@@ -181,14 +181,14 @@ class Command:
             msg = sysinfo()
             sendMsg.send_text(self.ctx, msg)
             return
-        elif self.ctx.Content == '#以图搜图':
+        elif self.ctx.PicContent == '#以图搜图':
             pic = PicSearch(self.ctx)
             if self.ctx.PicUrl != '':
                 pic.pic_search(self.ctx.PicUrl)
             else:
                 sendMsg.send_text(self.ctx, '缺少图片呢')
             return
-        elif self.ctx.Content == '#以图搜番':
+        elif self.ctx.PicContent == '#以图搜番':
             pic = PicSearch(self.ctx)
             if self.ctx.PicUrl != '':
                 pic.anime_search(self.ctx.PicUrl)

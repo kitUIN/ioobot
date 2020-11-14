@@ -2,7 +2,7 @@
   "BotQQ": 0,
   "host": "http://127.0.0.1",
   "port": 8888,
-  "use_plugins": false,
+  "use_plugins": true,
   "log": false,
   "log_file": false,
   "superAdmin": 0,
