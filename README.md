@@ -1,5 +1,6 @@
 # IooBot
 一个适用于[OPQBOT](https://github.com/OPQBOT/OPQ) 的识图姬  
+如果有什么BUG或者什么建议可以通过机器人QQ **850558946**使用命令**#留言 <内容>** 向我反馈（**#help**查看命令）
 使用见wiki  
 →[wiki](https://github.com/kitUIN/ioobot/wiki) ←
 ## 目前有以下功能  
@@ -11,7 +12,8 @@
 - 今日人品
 
 ## TODO
-- [x] 模块化
+- [ ] pixiv下载
+- [ ] botoy插件管理
 - [ ] 网易云音乐无损解析
 - [ ] 色图模块统计
 - [ ] 完善xml，json监控
@@ -19,4 +21,4 @@
 - [以图搜图](https://github.com/kitUIN/PicImageSearch)
 - [OPQ涩图姬](https://github.com/yuban10703/OPQ-SetuBot)
 - [OPQBOT](https://github.com/OPQBOT/OPQ)
-- [Botoy]()
+- [Botoy](https://github.com/xiyaowong/botoy/)

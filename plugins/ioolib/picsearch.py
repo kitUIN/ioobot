@@ -46,14 +46,14 @@ class PicSearch:
                 key = None
             else:
                 key = config['SauceNAOKEY']
-            saucenao = SauceNAO(api_key=key,numres=1)
+            saucenao = SauceNAO(api_key=key,numres=1,testmode=1)
+            logger.info('开始搜索')
             res = saucenao.search(url)
             raw = res.raw[0]
-            logger.info('开始搜索')
             if raw.similarity > 80:
                 logger.info('搜索成功')
-                msg = '缩略图展示↑↑↑\r\n标题:{}\r\n作者：{}\r\n作者id：https://www.pixiv.net/users/{}\r\n作品id：{}\r\n直通车：{}\r\n'.format(
-                    raw.title, raw.author, raw.member_id, raw.pixiv_id, raw.urls)
+                msg = '缩略图展示↑↑↑\r\n标题:{}\r\n作者:{}\r\n作者id:{}\r\n作品id:{}\r\n直通车:{}\r\n'.format(
+                    raw.title, raw.author, raw.member_id, raw.pixiv_id, raw.url)
                 SendMsg.send_pic(self.ctx, msg, raw.thumbnail, False, True)
                 return
             else:

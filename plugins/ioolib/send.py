@@ -11,7 +11,7 @@ action = Action(qq=config['BotQQ'])
 def tobase64(filename):
     with open(filename, 'rb') as f:
         coding = base64.b64encode(f.read())  # 读取文件内容，转换为base64编码
-        logger.info('{filename}本地base64转码~')
+        logger.info('本地base64转码~')
         return coding.decode()
 
 

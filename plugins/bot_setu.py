@@ -20,6 +20,8 @@ pattern_setu = '来(.*?)[点丶份张幅](.*?)的?(|r18)[色瑟涩🐍][图圖�
 # ---------------------------------------
 sendMsg = Send()
 action = Action(qq=config['BotQQ'])
+
+
 # ---------------------------------------
 
 
@@ -320,6 +322,8 @@ class Setu:
                 tag=self.tag,
                 num=self.api_0_realnum + self.api_1_realnum + self.api_pixiv_realnum
             ), self.db_config['at_warning'])
+
+
 # ------------------------------权限db-------------
 class Getdata:
     @staticmethod
@@ -407,15 +411,13 @@ def receive_friend_msg(ctx: FriendMsg):
             Setu(ctx, friend_info[2], friend_info[1], friend_info[3]).main()
 
 
-@deco.queued_up
-@deco.ignore_botself
 def receive_group_msg(ctx: GroupMsg):
     group_info = re.search(pattern_setu, ctx.Content)  # 提取关键字
-    delay = re.findall(r'REVOKE[(d+)]', ctx.Content)
+    delay = re.search('REVOKE\[(.*?)\]', ctx.Content)
     if group_info:
         Setu(ctx, group_info[2], group_info[1], group_info[3]).main()
     if delay:
-        delay = min(int(delay[0]), 90)
+        delay = min(int(delay[1]), 90)
         time.sleep(delay)
         action.revokeGroupMsg(ctx.FromGroupId, ctx.MsgSeq, ctx.MsgRandom)
 

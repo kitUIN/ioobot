@@ -4,7 +4,7 @@ import re
 from .dbs import *
 from .send import Send, tobase64
 from .sysinfo import *
-
+action = Action(qq=config['BotQQ'])
 renping = {}  # 人品记录
 sendMsg = Send()
 
@@ -142,7 +142,7 @@ class Command:
             return
         elif self.ctx.Content[:3] == '#留言' or self.ctx.Content[:3] == '#ly':
             try:
-                msg = '来自：(群{}){}，内容：{}'.format(str(self.ctx.FromGroupId), str(self.ctx.FromUserId), self.ctx.Content)
+                msg = '来自：QQ{}(群{})，内容：{}'.format(str(self.ctx.FromGroupId), str(self.ctx.FromUserId), self.ctx.Content)
             except:
                 msg = '来自：{}，内容：{}'.format(str(self.ctx.FromUin), self.ctx.Content)
             action.sendFriendText(config['superAdmin'], msg)
