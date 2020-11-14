@@ -1,10 +1,22 @@
-from .dbs import config
+import base64
+
 from botoy import Action
+from loguru import logger
+
+from .dbs import config
+
 action = Action(qq=config['BotQQ'])
 
 
+def tobase64(filename):
+    with open(filename, 'rb') as f:
+        coding = base64.b64encode(f.read())  # 读取文件内容，转换为base64编码
+        logger.info('{filename}本地base64转码~')
+        return coding.decode()
+
+
 class Send:
-    def send_text(self, ctx, text,atUser: bool = False):
+    def send_text(self, ctx, text, atUser: bool = False):
         if ctx.__class__.__name__ == 'GroupMsg':
             if atUser:
                 action.sendGroupText(ctx.FromGroupId, text, ctx.FromUserId)

@@ -2,22 +2,21 @@
 # coding=utf-8
 import os
 import pathlib
-import random
-import re
 import threading
-import time
 
 import botoy.decorators as deco
 from botoy import FriendMsg, GroupMsg, EventMsg
 from botoy.refine import *
 from loguru import logger
+
+from plugins.bot_setu import Getdata
 from plugins.ioolib import *
 
-pattern_command = '#(.*?)'
 # ---------------------------------------------
-botdata = event.Getdata()
+botdata = Getdata()
 SendMsg = Send()
 bot.reload_plugins()
+bot.remove_plugin('bot_example')
 
 
 # ---------------------------ctx中间加工---------------------------
@@ -27,9 +26,9 @@ def Pic(ctx: GroupMsg):
     ctx.PicUrl = ''
     if ctx.MsgType == 'PicMsg':
         ctx.PicUrl = refine_pic_group_msg(ctx).GroupPic[0].Url  # 图片地址
-        logger.info(ctx.PicUrl)
+
         ctx.PicContent = refine_pic_group_msg(ctx).Content  # 图片消息内容
-        logger.info(ctx.Content)
+
     else:
         pass
     return ctx
@@ -38,8 +37,7 @@ def Pic(ctx: GroupMsg):
 # -----------------------消息显示--------------------------------------
 
 @bot.on_group_msg
-def group_msg(ctx: GroupMsg):
-    # todo 完善xml，json，pic数据结构
+def group_msg(ctx: GroupMsg):  # todo 完善xml，json，pic,event数据结构
     if ctx.MsgType == 'TextMsg':
         msg = '\r\n消息类型:{}[文本]\r\n发送人:{}({})\r\n来自群:{}({})\r\n内容:{}\r\n时间:{}'.format(ctx.MsgType, ctx.FromNickName,
                                                                                      ctx.FromUserId,
@@ -53,7 +51,8 @@ def group_msg(ctx: GroupMsg):
                                                                                               ctx.FromUserId,
                                                                                               ctx.FromGroupName,
                                                                                               ctx.FromGroupId,
-                                                                                              ctx.Content, ctx.PicUrl,
+                                                                                              ctx.PicContent,
+                                                                                              ctx.PicUrl,
                                                                                               ctx.MsgTime)
         logger.debug(msg)
 
@@ -71,23 +70,6 @@ def events(ctx: EventMsg):
 
 
 # -----------------------指令-----------------------------------------------
-@bot.on_friend_msg
-@deco.queued_up
-@deco.ignore_botself
-def receive_friend_msg(ctx: FriendMsg):  # 修改指令 前往/ioolib/command.py
-    if re.match(pattern_command, ctx.Content):
-        Command(ctx).main()
-
-
-@bot.on_group_msg
-@deco.queued_up
-@deco.ignore_botself
-def receive_group_msg(ctx: GroupMsg):
-    if re.match(pattern_command, ctx.Content):
-        Command(ctx).main()
-    else:
-        Command(ctx).cmd_fudu()
-
 
 @bot.on_group_msg
 @deco.ignore_botself
@@ -112,12 +94,7 @@ def group_mm(ctx: GroupMsg):
 '''
 
 
-
-
-
-
-
-
+# --------------------socket监听----------------
 @bot.when_disconnected(every_time=True)
 def disconnected():
     logger.warning('socket断开~')

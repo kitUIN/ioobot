@@ -1,21 +1,19 @@
 import base64
 import os
 import random
-
-from botoy.refine import refine_group_admin_event_msg, refine_group_join_event_msg
-from retrying import retry
 import re
-import pathlib
 import time
-import threading
-import time
-import requests
-from loguru import logger
-from tinydb.operations import add
+
 import botoy.decorators as deco
-from plugins.ioolib.dbs import Q,db_tmp,config,group_config,friend_config,Action
+import requests
+from botoy import FriendMsg, GroupMsg, EventMsg
+from botoy.refine import refine_group_admin_event_msg, refine_group_join_event_msg
+from loguru import logger
+from retrying import retry
+from tinydb.operations import add
+
+from plugins.ioolib.dbs import Q, db_tmp, config, group_config, friend_config, Action
 from plugins.ioolib.send import Send
-from botoy import FriendMsg, GroupMsg,EventMsg
 
 # ------------------正则------------------
 pattern_setu = '来(.*?)[点丶份张幅](.*?)的?(|r18)[色瑟涩🐍][图圖🤮]'
@@ -398,8 +396,10 @@ class Getdata:
                 return
         logger.warning('群:{}不存在~'.format(group_id))
 
+
 # --------------指令-------------------------
 @deco.queued_up
+@deco.ignore_botself
 def receive_friend_msg(ctx: FriendMsg):
     if not (ctx.Content is None):
         friend_info = re.search(pattern_setu, ctx.Content)  # 提取关键字
@@ -408,6 +408,7 @@ def receive_friend_msg(ctx: FriendMsg):
 
 
 @deco.queued_up
+@deco.ignore_botself
 def receive_group_msg(ctx: GroupMsg):
     group_info = re.search(pattern_setu, ctx.Content)  # 提取关键字
     delay = re.findall(r'REVOKE[(d+)]', ctx.Content)

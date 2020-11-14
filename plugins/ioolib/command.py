@@ -1,45 +1,15 @@
-import base64
 import random
 import re
 
 from .dbs import *
-from .send import Send
-from .picsearch import PicSearch
+from .send import Send, tobase64
 from .sysinfo import *
 
 renping = {}  # 人品记录
 sendMsg = Send()
-FuDu = 0
-FuDuQQG = 0
 
 
-def tobase64(filename):
-    with open(filename, 'rb') as f:
-        coding = base64.b64encode(f.read())  # 读取文件内容，转换为base64编码
-        logger.info('本地base64转码~')
-        return coding.decode()
 
-
-def send_ver(mess):
-    version = config['Version']
-    versions = config['version']
-    vers = '当前版本→' + version + '←' + '\r\n#----历史版本----#\r\n'
-    for ve in versions:
-        vers = vers + ve + ','
-    vers = vers + '\r\n#----更新内容----#\r\n'
-    if mess.Content == '#v1.0.0':
-        vers = vers + versions['v1.0.0']
-    elif mess.Content == '#v1.0.1':
-        vers = vers + versions['v1.0.1']
-    elif mess.Content == '#v1.1.0':
-        vers = vers + versions['v1.1.0']
-    elif mess.Content == '#v1.1.1':
-        vers = vers + versions['v1.1.1']
-    elif mess.Content == '#v1.1.2':
-        vers = vers + versions['v1.1.2']
-    else:
-        vers = vers + versions[version]
-    return vers
 
 
 class Command:
@@ -57,37 +27,6 @@ class Command:
             return '{}: {}\n↓↓↓↓\n{}: {}'.format(ret, rt_befeore[lista[0]], ret, dicta[lista[0]])
         lista.pop(0)
         return self.change_dict(x, lista, change, ret)
-
-    def cmd_fudu(self):
-        global FuDu
-        global FuDuQQG
-        if self.ctx.Content == '砸烂复读姬' and self.ctx.FromUserId != self.ctx.CurrentQQ and FuDu == 1:
-            FuDuQQG = 0
-            FuDu = 0
-            tobase = tobase64('look/fudu1.jpg')
-            sendMsg.send_pic(self.ctx, '', '', False, False, tobase)
-            return
-        elif self.ctx.Content == '砸烂复读姬' and FuDu == 0:
-            tobase = tobase64('look/fudu2.jpg')
-            sendMsg.send_pic(self.ctx, '', '', False, False, tobase)
-            return
-        elif (self.ctx.Content == '复读姬模式' or self.ctx.Content == '开启复读姬') and self.ctx.FromUserId != self.ctx.CurrentQQ:
-            FuDu = 1
-            FuDuQQG = self.ctx.FromGroupId
-            tobase = tobase64('look/fudu0.jpg')
-            sendMsg.send_pic(self.ctx, '', '', False, False, tobase)
-            return
-        elif FuDu == 1 and (self.ctx.FromUserId != self.ctx.CurrentQQ) and (self.ctx.Content != '复读姬模式') and (
-                self.ctx.FromGroupId == FuDuQQG):
-            msg = self.ctx.Content
-            if self.ctx.MsgType == 'PicMsg':
-                # try:
-                msg = self.ctx.PicContent
-                PicUrl = self.ctx.PicUrl
-                sendMsg.send_pic(self.ctx, msg, PicUrl)
-            else:
-                sendMsg.send_text(self.ctx, msg)
-            return
 
     def cmd_group(self, lv):
         ret = ''
@@ -179,24 +118,6 @@ class Command:
     def cmd(self, group, lv):  # todo 迁移 网易云识别，setu统计，
         if self.ctx.Content == '#sysinfo' or self.ctx.Content == '#运行状态' or self.ctx.Content == '#系统信息':  # 运行状态
             msg = sysinfo()
-            sendMsg.send_text(self.ctx, msg)
-            return
-        elif self.ctx.PicContent == '#以图搜图':
-            pic = PicSearch(self.ctx)
-            if self.ctx.PicUrl != '':
-                pic.pic_search(self.ctx.PicUrl)
-            else:
-                sendMsg.send_text(self.ctx, '缺少图片呢')
-            return
-        elif self.ctx.PicContent == '#以图搜番':
-            pic = PicSearch(self.ctx)
-            if self.ctx.PicUrl != '':
-                pic.anime_search(self.ctx.PicUrl)
-            else:
-                sendMsg.send_text(self.ctx, '缺少图片呢')
-            return
-        elif self.ctx.Content[:2] == '#v':
-            msg = send_ver(self.ctx)
             sendMsg.send_text(self.ctx, msg)
             return
         elif self.ctx.Content == '#今日人品' or self.ctx.Content == '#jrrp':  # 今日人品
