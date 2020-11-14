@@ -5,7 +5,7 @@ import pathlib
 import threading
 
 import botoy.decorators as deco
-from botoy import FriendMsg, GroupMsg, EventMsg
+from botoy import GroupMsg
 from botoy.refine import *
 from loguru import logger
 
@@ -15,58 +15,22 @@ from plugins.ioolib import *
 # ---------------------------------------------
 botdata = Getdata()
 SendMsg = Send()
-bot.reload_plugins()
-bot.remove_plugin('bot_example')
 
 
-# ---------------------------ctx中间加工---------------------------
+# -----------------------ctx预加工------------------------------------------
+
 
 @bot.group_context_use
-def Pic(ctx: GroupMsg):
+def _Pic(ctx: GroupMsg):
     ctx.PicUrl = ''
+    ctx.PicContent = ''
     if ctx.MsgType == 'PicMsg':
         ctx.PicUrl = refine_pic_group_msg(ctx).GroupPic[0].Url  # 图片地址
 
         ctx.PicContent = refine_pic_group_msg(ctx).Content  # 图片消息内容
-
     else:
         pass
     return ctx
-
-
-# -----------------------消息显示--------------------------------------
-
-@bot.on_group_msg
-def group_msg(ctx: GroupMsg):  # todo 完善xml，json，pic,event数据结构
-    if ctx.MsgType == 'TextMsg':
-        msg = '\r\n消息类型:{}[文本]\r\n发送人:{}({})\r\n来自群:{}({})\r\n内容:{}\r\n时间:{}'.format(ctx.MsgType, ctx.FromNickName,
-                                                                                     ctx.FromUserId,
-                                                                                     ctx.FromGroupName, ctx.FromGroupId,
-                                                                                     ctx.Content,
-                                                                                     ctx.MsgTime)
-        logger.debug(msg)
-    elif ctx.MsgType == 'PicMsg':
-        msg = '\r\n消息类型:{}[图片]\r\n发送人:{}({})\r\n来自群:{}({})\r\n内容:{}\r\n图片:{}\r\n时间:{}'.format(ctx.MsgType,
-                                                                                              ctx.FromNickName,
-                                                                                              ctx.FromUserId,
-                                                                                              ctx.FromGroupName,
-                                                                                              ctx.FromGroupId,
-                                                                                              ctx.PicContent,
-                                                                                              ctx.PicUrl,
-                                                                                              ctx.MsgTime)
-        logger.debug(msg)
-
-
-@bot.on_friend_msg
-def friend_msg(ctx: FriendMsg):
-    msg = '\r\n消息类型:{}\r\n发送人:{}\r\n内容:{}'.format(ctx.MsgType, ctx.FromUin, ctx.Content)
-    logger.debug(msg)
-
-
-@bot.on_event
-def events(ctx: EventMsg):
-    msg = '\r\n事件名称:{}\r\n具体信息:{}\r\n基本信息:{}'.format(ctx.EventName, ctx.EventData, ctx.EventMsg)
-    logger.debug(msg)
 
 
 # -----------------------指令-----------------------------------------------
@@ -115,4 +79,6 @@ if __name__ == '__main__':
         pathlib.Path('.flag').touch()  # 创建flag文件
     # ---------------------------------------bot---------------------------------------
     bot.run()
+    bot.load_plugins()
+    bot.remove_plugin('example')
     # ---------------------------------------------------------------------------------
