@@ -3,6 +3,7 @@ import base64
 from PicImageSearch import SauceNAO, TraceMoe
 from loguru import logger
 
+from .dbs import config
 from .send import Send
 
 SendMsg = Send()
@@ -41,7 +42,11 @@ class PicSearch:
 
     def pic_search(self, url):  # 以图搜图
         try:
-            saucenao = SauceNAO(numres=1)
+            if config['SauceNAOKEY'] == '':
+                key = None
+            else:
+                key = config['SauceNAOKEY']
+            saucenao = SauceNAO(api_key=key,numres=1)
             res = saucenao.search(url)
             raw = res.raw[0]
             logger.info('开始搜索')

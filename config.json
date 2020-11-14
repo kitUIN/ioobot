@@ -7,5 +7,6 @@
   "log_file": false,
   "superAdmin": 0,
   "path": "",
-  "LoliconAPIKey": ""
+  "LoliconAPIKey": "",
+  "SauceNAOKEY": ""
 }
