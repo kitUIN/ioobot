@@ -1,7 +1,7 @@
 import botoy.decorators as deco
 from botoy import FriendMsg, GroupMsg
 
-from plugins.ioolib import Send
+from plugins.ioolib.send import Send
 
 sendMsg = Send()
 Version = "v2.0.0"

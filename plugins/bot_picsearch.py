@@ -1,7 +1,7 @@
 import botoy.decorators as deco
 from botoy import FriendMsg, GroupMsg
 
-from plugins.ioolib import Send, PicSearch
+from plugins.ioolib.picsearch import Send, PicSearch
 
 sendMsg = Send()
 

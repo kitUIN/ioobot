@@ -3,7 +3,7 @@ from botoy import Action, FriendMsg, GroupMsg, EventMsg
 import botoy.decorators as deco
 from botoy.refine import *
 from loguru import logger
-from plugins.ioolib import Send
+from plugins.ioolib.send import Send
 sendMsg = Send()
 
 
