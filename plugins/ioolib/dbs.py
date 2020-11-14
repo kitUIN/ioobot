@@ -19,6 +19,9 @@ try:
 except Exception as e:  # FileNotFoundError
     logger.error('配置文件加载失败,请检查配置~' + str(e))
     sys.exit()
+if config["BotQQ"] == 0 or config["superAdmin"] == 0:
+    logger.error('配置文件未填写,请检查配置文件中"BotQQ"与"superAdmin"~')
+    sys.exit()
 group_config = TinyDB('./db/group_config.json')
 friend_config = TinyDB('./db/friend_config.json')
 tag_db = TinyDB('./db/tag.json')

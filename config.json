@@ -8,5 +8,14 @@
   "superAdmin": 0,
   "path": "",
   "LoliconAPIKey": "",
-  "SauceNAOKEY": ""
+  "SauceNAOKEY": "",
+  "netease": false,
+  "netease_username": "",
+  "netease_password": "",
+  "pixiv": false,
+  "pixiv_username": "",
+  "pixiv_password": "",
+  "bilibili": false,
+  "bilibili_username": "",
+  "bilibili_password": ""
 }
