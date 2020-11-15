@@ -22,7 +22,7 @@ PS：测试环境:
   "Version": "v2.0.0",          #版本
   "path": "",                   #[setu模块]本地图片
   "LoliconAPIKey": "",          #[setu模块]LOLICON的apikey
-  "version": {                  #版本内容
+  
   }
 }
 ```
