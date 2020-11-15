@@ -21,8 +21,8 @@ class Pixiv:  # todo pixiv图片信息，已下载查询
         self.password = password
         self.id = id
         self.ctx = ctx
-        self.path = os.path.curdir + '/pixiv'
-        self.filename = self.path + '/' + str(self.id)
+        self.path = os.getcwd() + '/pixiv'
+        self.filename = self.path + '/' + str(self.id)+'.jpg'
         _REQUESTS_KWARGS = {
             'proxies': {
                 'https': 'http://127.0.0.1:10809',
@@ -34,17 +34,16 @@ class Pixiv:  # todo pixiv图片信息，已下载查询
     def _download_illust(self):
         self.api.login(self.username, self.password)
         json_result = self.api.illust_detail(self.id)
-        logger.info(json_result)
         illust = json_result.illust
-        logger.info(illust)
-        self.api.download(illust.image_urls['large'], path=self.path, fname=str(illust.id) + '.jpg')
+        if illust is None:
+            logger.error(json_result['error'])
+        self.api.download(illust.meta_single_page['original_image_url'], path=self.path, fname=str(illust.id) + '.jpg')
 
     def _search(self):
         pass
 
     def send_original(self):
         self._download_illust()
-        logger.info(self.filename)
         sendMsg.send_pic(self.ctx, '', '', False, False, tobase64(self.filename))
         # time.sleep(3)
         # os.remove(pic_path)
@@ -52,13 +51,10 @@ class Pixiv:  # todo pixiv图片信息，已下载查询
 
 def receive_friend_msg(ctx: FriendMsg):
     pixiv_info = re.match(pixiv_pattern, ctx.Content)
-    logger.info(pixiv_info[0])
     if pixiv_info:
         if config['pixiv']:
             try:
-                logger.info(pixiv_info)
                 id = int(pixiv_info[2])
-                logger.info(id)
                 Pixiv(_USERNAME, _PASSWORD, id, ctx).send_original()
             except Exception as e:
                 logger.error(e)
