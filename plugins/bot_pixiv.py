@@ -25,7 +25,7 @@ class Pixiv:  # todo pixiv图片信息，已下载查询
         self.filename = self.path + '/' + str(self.id)+'.jpg'
         _REQUESTS_KWARGS = {
             'proxies': {
-                'https': 'http://127.0.0.1:10809',
+                'https': 'http://127.0.0.1:10809',  # 代理
             },
             'verify': True,  # PAPI use https, an easy way is disable requests SSL verify
         }

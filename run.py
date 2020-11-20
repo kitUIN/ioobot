@@ -1,13 +1,11 @@
 #! /usr/bin/env python3
 # coding=utf-8
-import json
 import os
 import pathlib
-import sys
 import threading
 
 import botoy.decorators as deco
-from botoy import GroupMsg
+from botoy import GroupMsg, FriendMsg
 from botoy.refine import *
 from loguru import logger
 
@@ -23,13 +21,24 @@ SendMsg = Send()
 
 
 @bot.group_context_use
-def _Pic(ctx: GroupMsg):
+def Group_Pic(ctx: GroupMsg):
     ctx.PicUrl = ''
     ctx.PicContent = ''
     if ctx.MsgType == 'PicMsg':
         ctx.PicUrl = refine_pic_group_msg(ctx).GroupPic[0].Url  # 图片地址
-
         ctx.PicContent = refine_pic_group_msg(ctx).Content  # 图片消息内容
+    else:
+        pass
+    return ctx
+
+
+@bot.friend_context_use
+def Friend_Pic(ctx: FriendMsg):
+    ctx.PicUrl = ''
+    ctx.PicContent = ''
+    if ctx.MsgType == 'PicMsg':
+        ctx.PicUrl = refine_pic_friend_msg(ctx).FriendPic[0].Url  # 图片地址
+        ctx.PicContent = refine_pic_friend_msg(ctx).Content  # 图片消息内容
     else:
         pass
     return ctx
@@ -50,6 +59,8 @@ def test(ctx):
 def plugin(ctx: GroupMsg):
     bot.reload_plugins()
     logger.info(bot.plugins)
+
+
 '''
 @bot.on_group_msg
 @deco.ignore_botself
