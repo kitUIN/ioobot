@@ -142,6 +142,7 @@ class Command:
             except:
                 msg = '来自：{}，内容：{}'.format(str(self.ctx.FromUin), self.ctx.Content)
             action.sendFriendText(config['superAdmin'], msg)
+            sendMsg.send_text(self.ctx,'已为您留言',True)
             return
         elif self.ctx.Content == '#help' or self.ctx.Content == '#帮助':
             sendMsg.send_pic(self.ctx, '', '', 'look/help.png', False, False)

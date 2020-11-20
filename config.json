@@ -9,7 +9,7 @@
   "path": "",
   "LoliconAPIKey": "",
   "SauceNAOKEY": "",
-  "SauceNAO_proxies": false,
+  "search_proxies": false,
   "netease": false,
   "netease_username": "",
   "netease_password": "",

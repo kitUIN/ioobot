@@ -6,27 +6,37 @@ from loguru import logger
 
 
 def receive_friend_msg(ctx: FriendMsg):  # todo 完善xml，json，pic,event数据结构
-    msg = '\r\n消息类型:{}\r\n发送人:{}\r\n内容:{}'.format(ctx.MsgType, ctx.FromUin, ctx.Content)
-    logger.debug(msg)
+
+    if ctx.MsgType == 'TextMsg':
+        msg = '\r\n消息类型:{}[文本]\r\n发送人:{}\r\n内容:{}'.format(ctx.MsgType, ctx.FromUin, ctx.Content)
+        logger.debug(msg)
+    elif ctx.MsgType == 'PicMsg':
+        msg = '\r\n消息类型:{}[图片]\r\n发送人:{}\r\n内容:{}\r\n图片:{}\r\nSeq:{}'.format(ctx.MsgType,
+                                                                             ctx.FromUin,
+                                                                             ctx.PicContent,
+                                                                             ctx.PicUrl,
+                                                                             ctx.MsgSeq)
+        logger.debug(msg)
 
 
 def receive_group_msg(ctx: GroupMsg):
     if ctx.MsgType == 'TextMsg':
-        msg = '\r\n消息类型:{}[文本]\r\n发送人:{}({})\r\n来自群:{}({})\r\n内容:{}\r\n时间:{}'.format(ctx.MsgType, ctx.FromNickName,
-                                                                                     ctx.FromUserId,
-                                                                                     ctx.FromGroupName, ctx.FromGroupId,
-                                                                                     ctx.Content,
-                                                                                     ctx.MsgTime)
+        msg = '\r\n消息类型:{}[文本]\r\n发送人:{}({})\r\n来自群:{}({})\r\n内容:{}\r\nSeq:{}'.format(ctx.MsgType, ctx.FromNickName,
+                                                                                      ctx.FromUserId,
+                                                                                      ctx.FromGroupName,
+                                                                                      ctx.FromGroupId,
+                                                                                      ctx.Content,
+                                                                                      ctx.MsgSeq)
         logger.debug(msg)
     elif ctx.MsgType == 'PicMsg':
-        msg = '\r\n消息类型:{}[图片]\r\n发送人:{}({})\r\n来自群:{}({})\r\n内容:{}\r\n图片:{}\r\n时间:{}'.format(ctx.MsgType,
-                                                                                              ctx.FromNickName,
-                                                                                              ctx.FromUserId,
-                                                                                              ctx.FromGroupName,
-                                                                                              ctx.FromGroupId,
-                                                                                              ctx.PicContent,
-                                                                                              ctx.PicUrl,
-                                                                                              ctx.MsgTime)
+        msg = '\r\n消息类型:{}[图片]\r\n发送人:{}({})\r\n来自群:{}({})\r\n内容:{}\r\n图片:{}\r\nSeq:{}'.format(ctx.MsgType,
+                                                                                               ctx.FromNickName,
+                                                                                               ctx.FromUserId,
+                                                                                               ctx.FromGroupName,
+                                                                                               ctx.FromGroupId,
+                                                                                               ctx.PicContent,
+                                                                                               ctx.PicUrl,
+                                                                                               ctx.MsgSeq)
         logger.debug(msg)
 
 

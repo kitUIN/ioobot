@@ -32,20 +32,22 @@ class Pixiv:  # todo pixiv图片信息，已下载查询
         }
         self.api = AppPixivAPI(**_REQUESTS_KWARGS)
 
-    def _download_illust(self):
+    def _get_illust(self):
         self.api.login(self.username, self.password)
         json_result = self.api.illust_detail(self.id)
         illust = json_result.illust
         if illust is None:
             logger.error(json_result['error'])
-        self.api.download(illust.meta_single_page['original_image_url'], path=self.path, fname=str(illust.id) + '.jpg')
+        return illust.meta_single_page['original_image_url']
+
+    def _download_illust(self):
+        self.api.download(self._get_illust(), path=self.path, fname=self.id + '.jpg')
 
     def _search(self):
         pass
 
     def send_original(self):
-        self._download_illust()
-        sendMsg.send_pic(self.ctx, '', '', self.filename, False, False)
+        sendMsg.send_pic(self.ctx, '', self._get_illust())
         # time.sleep(3)
         # os.remove(pic_path)
 
