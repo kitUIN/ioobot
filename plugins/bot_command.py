@@ -13,6 +13,7 @@ pattern_command = '#(.*?)'
 
 @deco.queued_up
 @deco.ignore_botself
+@deco.in_content('#')
 def receive_friend_msg(ctx: FriendMsg):  # 修改指令 前往ioobot/plugins/ioolib/command.py
     if re.match(pattern_command, ctx.Content):
         Command(ctx).main()
@@ -20,6 +21,7 @@ def receive_friend_msg(ctx: FriendMsg):  # 修改指令 前往ioobot/plugins/ioo
 
 @deco.queued_up
 @deco.ignore_botself
+@deco.in_content('#')
 def receive_group_msg(ctx: GroupMsg):
     if re.match(pattern_command, ctx.Content):
         Command(ctx).main()

@@ -45,11 +45,13 @@ def send_ver(ctx):
 
 @deco.queued_up
 @deco.ignore_botself
+@deco.in_content('#')
 def receive_friend_msg(ctx: FriendMsg):
     send_ver(ctx)
 
 
 @deco.queued_up
 @deco.ignore_botself
+@deco.in_content('#')
 def receive_group_msg(ctx: GroupMsg):
     send_ver(ctx)

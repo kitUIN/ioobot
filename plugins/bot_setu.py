@@ -122,13 +122,13 @@ class Setu:
                                          data['page'], url_original)
                     if config['path'] == '':
                         if self.db_config['original']:
-                            sendMsg.send_pic(self.ctx, msg, url_original, False, self.db_config['at'])
+                            sendMsg.send_pic(self.ctx, msg, url_original, flashPic=False, atUser=self.db_config['at'])
                         else:
                             sendMsg.send_pic(self.ctx, msg, 'https://cdn.jsdelivr.net/gh/laosepi/setu/pics/' + filename,
-                                             False, self.db_config['at'])
+                                             flashPic=False, atUser=self.db_config['at'])
                     else:  # 本地base64
-                        sendMsg.send_pic(self.ctx, msg, '', False, self.db_config['at'],
-                                         self.base_64(config['path'] + filename))
+                        sendMsg.send_pic(self.ctx, msg, '', config['path'] + filename, False,
+                                         self.db_config['at'])
                     self.api_0_realnum += 1
                 # else:
                 #     logger.warning('api0:{}'.format(res.status_code))
@@ -169,7 +169,7 @@ class Setu:
                     msg = self.build_msg(data['title'], data['pid'], data['author'], data['uid'], data['p'], '无~')
                     logger.info(msg)
                     logger.info(data['url'])
-                    sendMsg.send_pic(self.ctx, msg, data['url'], False, self.db_config['at'])
+                    sendMsg.send_pic(self.ctx, msg, data['url'], flashPic=False, atUser=self.db_config['at'])
                     self.api_1_realnum += 1
                 logger.info(
                     '从loliconのapi获取到{}张setu  实际发送{}张'.format(setu_data['count'], self.api_1_realnum))
@@ -410,7 +410,8 @@ def receive_friend_msg(ctx: FriendMsg):
         if friend_info:
             Setu(ctx, friend_info[2], friend_info[1], friend_info[3]).main()
 
-
+@deco.queued_up
+@deco.ignore_botself
 def receive_group_msg(ctx: GroupMsg):
     group_info = re.search(pattern_setu, ctx.Content)  # 提取关键字
     delay = re.search('REVOKE\[(.*?)\]', ctx.Content)

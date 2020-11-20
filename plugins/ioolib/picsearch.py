@@ -13,13 +13,6 @@ class PicSearch:
     def __init__(self, ctx):
         self.ctx = ctx
 
-    @staticmethod
-    def _base_64(filename):
-        with open(filename, 'rb') as f:
-            coding = base64.b64encode(f.read())  # 读取文件内容，转换为base64编码
-            # print('本地base64转码~')
-            return coding.decode()
-
     def anime_search(self, url):  # 以图搜番
         try:
             tracemoe = TraceMoe()
@@ -32,40 +25,42 @@ class PicSearch:
                                                                                                      t.episode,
                                                                                                      t.is_adult,
                                                                                                      t.trial)
-                SendMsg.send_pic(self.ctx, msg, t.thumbnail, False, True)
+                SendMsg.send_pic(self.ctx, msg, t.thumbnail, flashPic=False, atUser=True)
                 return
             else:
                 msg = '找不到了呢'
-                SendMsg.send_pic(self.ctx, msg, '', False, True, self._base_64('look/ex01.jpg'))
+                SendMsg.send_pic(self.ctx, msg, '', 'look/ex01.jpg', False, True)
                 return
         except Exception as e:
             logger.error(e)
 
     def pic_search(self, url):  # 以图搜图
-        _REQUESTS_KWARGS = {
-            'proxies': {
-                'https': 'http://127.0.0.1:10809',
+        _REQUESTS_KWARGS = dict()
+        if config['SauceNAO_proxies'] == True:
+            _REQUESTS_KWARGS = {
+                'proxies': {
+                    'https': 'http://127.0.0.1:10809',
+                }
+                # 如果需要代理
             }
-            # 如果需要代理
-        }
         try:
             if config['SauceNAOKEY'] == '':
                 key = None
             else:
                 key = config['SauceNAOKEY']
-            saucenao = SauceNAO(api_key=key,numres=1,testmode=1,**_REQUESTS_KWARGS)
+            saucenao = SauceNAO(api_key=key, numres=1, testmode=1, **_REQUESTS_KWARGS)
             logger.info('开始搜索')
             res = saucenao.search(url)
             raw = res.raw[0]
             if raw.similarity > 80:
-                logger.info('搜索成功')
                 msg = '缩略图展示↑↑↑\r\n标题:{}\r\n作者:{}\r\n作者id:{}\r\n作品id:{}\r\n直通车:{}\r\n'.format(
                     raw.title, raw.author, raw.member_id, raw.pixiv_id, raw.url)
-                SendMsg.send_pic(self.ctx, msg, raw.thumbnail, False, True)
+                SendMsg.send_pic(self.ctx, msg, raw.thumbnail, flashPic=False, atUser=True)
+                logger.info('搜索成功')
                 return
             else:
                 msg = '找不到了呢'
-                SendMsg.send_pic(self.ctx, msg, '', False, True, self._base_64('look/ex01.jpg'))
+                SendMsg.send_pic(self.ctx, msg, '', 'look/ex01.jpg', False, True)
                 return
         except Exception as e:
             logger.error(e)

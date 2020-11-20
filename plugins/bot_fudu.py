@@ -1,7 +1,7 @@
 import botoy.decorators as deco
 from botoy import GroupMsg
 
-from .ioolib.send import Send, tobase64
+from .ioolib.send import Send
 
 sendMsg = Send()
 FuDu = 0
@@ -25,18 +25,15 @@ def cmd_fudu(ctx):
     elif ctx.Content == '砸烂复读姬' and ctx.FromUserId != ctx.CurrentQQ and FuDu == 1:
         FuDuQQG = 0
         FuDu = 0
-        tobase = tobase64('look/fudu1.jpg')
-        sendMsg.send_pic(ctx, '', '', False, False, tobase)
+        sendMsg.send_pic(ctx, '', '', 'look/fudu1.jpg', False, False)
         return
     elif ctx.Content == '砸烂复读姬' and FuDu == 0:
-        tobase = tobase64('look/fudu2.jpg')
-        sendMsg.send_pic(ctx, '', '', False, False, tobase)
+        sendMsg.send_pic(ctx, '', '', 'look/fudu2.jpg', False, False)
         return
     elif (ctx.Content == '复读姬模式' or ctx.Content == '开启复读姬') and ctx.FromUserId != ctx.CurrentQQ:
         FuDu = 1
         FuDuQQG = ctx.FromGroupId
-        tobase = tobase64('look/fudu0.jpg')
-        sendMsg.send_pic(ctx, '', '', False, False, tobase)
+        sendMsg.send_pic(ctx, '', '', 'look/fudu0.jpg', False, False)
         return
 
 

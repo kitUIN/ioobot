@@ -2,14 +2,12 @@ import random
 import re
 
 from .dbs import *
-from .send import Send, tobase64
+from .send import Send
 from .sysinfo import *
+
 action = Action(qq=config['BotQQ'])
 renping = {}  # 人品记录
 sendMsg = Send()
-
-
-
 
 
 class Command:
@@ -131,14 +129,12 @@ class Command:
                 math = random.randint(0, 100)
                 renping[id] = math
             msg = '欧吗？{}年寿命换的。'.format(math)
-            tobase = tobase64('look/ouhuang.jpg')
-            sendMsg.send_pic(self.ctx, msg, '', False, False, tobase)
+
+            sendMsg.send_pic(self.ctx, msg, '', 'look/ouhuang.jpg', False, False)
             return
         elif self.ctx.Content == '#打赏':
-            tobase = tobase64('look/dashang.jpg')
-            sendMsg.send_pic(self.ctx, '', '', False, False, tobase)
-            tobase = tobase64('look/keai.jpg')
-            sendMsg.send_pic(self.ctx, '', '', False, False, tobase)
+            sendMsg.send_pic(self.ctx, '', '', 'look/dashang.jpg', False, False)
+            sendMsg.send_pic(self.ctx, '', '', 'look/keai.jpg', False, False)
             return
         elif self.ctx.Content[:3] == '#留言' or self.ctx.Content[:3] == '#ly':
             try:
@@ -148,7 +144,7 @@ class Command:
             action.sendFriendText(config['superAdmin'], msg)
             return
         elif self.ctx.Content == '#help' or self.ctx.Content == '#帮助':
-            sendMsg.send_pic(self.ctx, '', '', False, False, tobase64('look/help.png'))
+            sendMsg.send_pic(self.ctx, '', '', 'look/help.png', False, False)
             return
         elif group:
             self.cmd_group(lv)

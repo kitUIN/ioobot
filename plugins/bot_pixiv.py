@@ -1,12 +1,13 @@
 import os
 import re
 
+import botoy.decorators as deco
 from botoy import FriendMsg, GroupMsg
 from loguru import logger
 from pixivpy3 import *
 
 from plugins.ioolib.dbs import config
-from plugins.ioolib.send import Send, tobase64
+from plugins.ioolib.send import Send
 
 _USERNAME = config["netease_username"]
 _PASSWORD = config["netease_password"]
@@ -22,7 +23,7 @@ class Pixiv:  # todo pixiv图片信息，已下载查询
         self.id = id
         self.ctx = ctx
         self.path = os.getcwd() + '/pixiv'
-        self.filename = self.path + '/' + str(self.id)+'.jpg'
+        self.filename = self.path + '/' + str(self.id) + '.jpg'
         _REQUESTS_KWARGS = {
             'proxies': {
                 'https': 'http://127.0.0.1:10809',  # 代理
@@ -44,11 +45,12 @@ class Pixiv:  # todo pixiv图片信息，已下载查询
 
     def send_original(self):
         self._download_illust()
-        sendMsg.send_pic(self.ctx, '', '', False, False, tobase64(self.filename))
+        sendMsg.send_pic(self.ctx, '', '', self.filename, False, False)
         # time.sleep(3)
         # os.remove(pic_path)
 
 
+@deco.in_content('#')
 def receive_friend_msg(ctx: FriendMsg):
     pixiv_info = re.match(pixiv_pattern, ctx.Content)
     if pixiv_info:
@@ -62,6 +64,7 @@ def receive_friend_msg(ctx: FriendMsg):
             logger.error('配置文件未开启pixiv下载功能')
 
 
+@deco.in_content('#')
 def receive_group_msg(ctx: GroupMsg):
     pixiv_info = re.match(pixiv_pattern, ctx.Content)
     if pixiv_info:
