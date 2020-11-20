@@ -19,26 +19,25 @@ SendMsg = Send()
 
 # -----------------------ctx预加工------------------------------------------
 
-
-@bot.group_context_use
-def Group_Pic(ctx: GroupMsg):
-    ctx.PicUrl = ''
-    ctx.PicContent = ''
-    if ctx.MsgType == 'PicMsg':
-        ctx.PicUrl = refine_pic_group_msg(ctx).GroupPic[0].Url  # 图片地址
-        ctx.PicContent = refine_pic_group_msg(ctx).Content  # 图片消息内容
-    else:
-        pass
-    return ctx
-
-
 @bot.friend_context_use
-def Friend_Pic(ctx: FriendMsg):
+def _Friend_Pic(ctx: FriendMsg):
     ctx.PicUrl = ''
     ctx.PicContent = ''
     if ctx.MsgType == 'PicMsg':
         ctx.PicUrl = refine_pic_friend_msg(ctx).FriendPic[0].Url  # 图片地址
         ctx.PicContent = refine_pic_friend_msg(ctx).Content  # 图片消息内容
+    else:
+        pass
+    return ctx
+
+
+@bot.group_context_use
+def _Group_Pic(ctx: GroupMsg):
+    ctx.PicUrl = ''
+    ctx.PicContent = ''
+    if ctx.MsgType == 'PicMsg':
+        ctx.PicUrl = refine_pic_group_msg(ctx).GroupPic[0].Url  # 图片地址
+        ctx.PicContent = refine_pic_group_msg(ctx).Content  # 图片消息内容
     else:
         pass
     return ctx

@@ -22,8 +22,9 @@ class PicSearch:
 
     def anime_search(self, url):  # 以图搜番
         try:
-            t = TraceMoe()
-            t.search(url)
+            tracemoe = TraceMoe()
+            t = tracemoe.search(url).raw[0]
+            logger.info('开始搜索')
             if t.similarity > 0.87:
                 msg = '缩略图展示↑↑↑\r\n番名:{}({},{})\r\n发布日期：{}\r\n第{}集\r\nR18：{}\r\n搜索时间：{}s\r\n'.format(t.title_chinese,
                                                                                                      t.anime, t.title,
@@ -41,12 +42,18 @@ class PicSearch:
             logger.error(e)
 
     def pic_search(self, url):  # 以图搜图
+        _REQUESTS_KWARGS = {
+            'proxies': {
+                'https': 'http://127.0.0.1:10809',
+            }
+            # 如果需要代理
+        }
         try:
             if config['SauceNAOKEY'] == '':
                 key = None
             else:
                 key = config['SauceNAOKEY']
-            saucenao = SauceNAO(api_key=key,numres=1,testmode=1)
+            saucenao = SauceNAO(api_key=key,numres=1,testmode=1,**_REQUESTS_KWARGS)
             logger.info('开始搜索')
             res = saucenao.search(url)
             raw = res.raw[0]
