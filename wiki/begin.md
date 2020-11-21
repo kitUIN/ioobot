@@ -27,11 +27,11 @@ PS：测试环境:
   "netease_username": "",       #[网易云vip解析]账号
   "netease_password": "",       #[网易云vip解析]密码
   "pixiv": false,               #[pixiv]开关(需要梯子)
-  "pixiv_username": "",         #
-  "pixiv_password": "",         #
-  "bilibili": false,            #
-  "bilibili_username": "",      #
-  "bilibili_password": ""       #
+  "pixiv_username": "",         #[pixiv]账号
+  "pixiv_password": "",         #[pixiv]密码
+  "bilibili": false,            #[bilibili]开关
+  "bilibili_username": "",      #[bilibili]账号
+  "bilibili_password": ""       #[bilibili]密码
   }
 }
 ```
