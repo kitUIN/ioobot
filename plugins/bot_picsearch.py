@@ -62,8 +62,7 @@ class PicSearch:
                 if raw.pixiv_id != '':
                     msg += '\r\n使用命令获得原图：p d {}'.format(raw.pixiv_id)
                 logger.info('搜索成功')
-                saucenao.download_thumbnail(raw.thumbnail)
-                sendMsg.send_pic(self.ctx, text=msg, picPath=os.getcwd()+'/thumbnail')
+                sendMsg.send_pic(self.ctx, text=msg,picUrl=raw.thumbnail)
                 return
             else:
                 msg = '找不到了呢'
