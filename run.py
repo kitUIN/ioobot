@@ -77,7 +77,7 @@ def _Group_Pic(ctx: GroupMsg):
 
 # -----------------------指令-----------------------------------------------
 
-@bot.on_group_msg()
+@bot.on_group_msg
 @deco.in_content('#插件')
 def plugin(ctx: GroupMsg, msg=''):
     if ctx.FromUserId == config['superAdmin']:
