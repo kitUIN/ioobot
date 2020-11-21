@@ -58,7 +58,8 @@ class PicSearch:
                 msg = '缩略图展示↑↑↑\r\n标题:{}\r\n作者:{}\r\n作者id:{}\r\n作品id:{}\r\n直通车:{}\r\n'.format(
                     raw.title, raw.author, raw.member_id, raw.pixiv_id, raw.url)
                 logger.info('搜索成功')
-                sendMsg.send_pic(self.ctx, msg, raw.thumbnail)
+                sendMsg.send_pic(self.ctx, text=msg, picUrl=raw.thumbnail)
+                sendMsg.send_text(self.ctx, msg)
                 return
             else:
                 msg = '找不到了呢'
