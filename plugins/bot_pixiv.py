@@ -24,12 +24,15 @@ class Pixiv:
         self.id = id
         self.ctx = ctx
         self.path = os.getcwd() + '/pixiv'
-        _REQUESTS_KWARGS = {
-            'proxies': {
-                'https': 'http://127.0.0.1:10809',  # 代理
-            },
-            'verify': True,  # PAPI use https, an easy way is disable requests SSL verify
-        }
+        if config['pixiv_proxies']:
+            _REQUESTS_KWARGS = {
+                'proxies': {
+                    'https': 'http://127.0.0.1:10809',  # 代理
+                },
+                'verify': True,  # PAPI use https, an easy way is disable requests SSL verify
+            }
+        else:
+            _REQUESTS_KWARGS = {}
         self.api = AppPixivAPI(**_REQUESTS_KWARGS)
 
     @staticmethod

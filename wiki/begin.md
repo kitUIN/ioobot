@@ -19,10 +19,19 @@ PS：测试环境:
   "log": false,                 #[botoy]日志
   "log_file": false,            #[botoy]日志输出
   "superAdmin": 0,              #[权限模块]超级管理员（必填）
-  "Version": "v2.0.0",          #版本
-  "path": "",                   #[setu模块]本地图片
+  "path": "",                   #[setu模块]本地图片地址
   "LoliconAPIKey": "",          #[setu模块]LOLICON的apikey
-  
+  "SauceNAOKEY": "",            #[识图姬]SauceNAO的访问key
+  "search_proxies": false,      #[识图姬]代理开关
+  "netease": false,             #[网易云vip解析]开关
+  "netease_username": "",       #[网易云vip解析]账号
+  "netease_password": "",       #[网易云vip解析]密码
+  "pixiv": false,               #[pixiv]开关(需要梯子)
+  "pixiv_username": "",         #
+  "pixiv_password": "",         #
+  "bilibili": false,            #
+  "bilibili_username": "",      #
+  "bilibili_password": ""       #
   }
 }
 ```
