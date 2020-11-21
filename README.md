@@ -1,9 +1,9 @@
 # IooBot
 一个适用于[OPQBOT](https://github.com/OPQBOT/OPQ) 的识图姬  
-如果有什么BUG或者什么建议可以通过机器人QQ **850558946**使用命令**#留言 <内容>** 向我反馈（**#help**查看命令）
-目前已经实现插件化，部分插件可拆下搭载在其他机器人上（同为botoy）使用
-使用见wiki  
-→[wiki](https://github.com/kitUIN/ioobot/wiki) ←
+如果有什么BUG或者什么建议可以通过机器人QQ **850558946**使用命令#留言 <内容> 向我反馈（**#help**查看命令）
+目前已经实现插件化，部分插件可拆下搭载在其他机器人上（同为botoy）使用  
+**一般每周六定期维护**  
+使用见  →[wiki](https://github.com/kitUIN/ioobot/wiki) ←
 ## 插件(点击跳转到说明)  
 - [识图搜源]()（目前支持SauceNAO和TraceMoe）
 - [网易云音乐无损解析]() （等OPQ更新上传功能才能使用）
@@ -19,7 +19,7 @@
 ## TODO
 - [x] pixiv下载
 - [ ] botoy插件管理
-- [x] 网易云音乐无损解析
+- [ ] 网易云音乐无损解析
 - [ ] 色图模块统计
 - [ ] 完善xml，json监控
 ## 相关项目(不分先后)

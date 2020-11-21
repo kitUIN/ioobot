@@ -26,6 +26,7 @@ group_config = TinyDB('./db/group_config.json')
 friend_config = TinyDB('./db/friend_config.json')
 tag_db = TinyDB('./db/tag.json')
 status = TinyDB('./db/status.json')
+pixiv_db = TinyDB('./db/pixiv.json')
 db_tmp = TinyDB(storage=MemoryStorage)
 Q = Query()
 bot = Botoy(qq=config['BotQQ'], host=config['host'], port=config['port'], use_plugins=config['use_plugins'],

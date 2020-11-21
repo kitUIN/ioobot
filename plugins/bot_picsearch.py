@@ -29,12 +29,11 @@ class PicSearch:
             tac = tracemoe.search(url)
             t = tac.raw[0]
             if t.similarity > 0.87:
-                msg = '缩略图展示↑↑↑\r\n番名:{}({},{})\r\n发布日期：{}\r\n第{}集\r\nR18：{}\r\n搜索时间：{}s'.format(t.title_chinese,
-                                                                                                 t.anime, t.title,
-                                                                                                 t.season,
-                                                                                                 t.episode,
-                                                                                                 t.is_adult,
-                                                                                                 tac.trial)
+                msg = '缩略图展示↑↑↑\r\n番名:{}({},{})\r\n发布日期：{}\r\n第{}集\r\nR18：{}'.format(t.title_chinese,
+                                                                                     t.anime, t.title,
+                                                                                     t.season,
+                                                                                     t.episode,
+                                                                                     t.is_adult)
                 logger.info('搜索成功')
                 sendMsg.send_pic(self.ctx, msg, t.thumbnail)
                 return
@@ -76,7 +75,6 @@ def cmd_picsearch(ctx):
             pic.pic_search(ctx.PicUrl)
     elif ctx.PicContent == '#以图搜番':
         if ctx.PicUrl != '':
-            logger.info('开始搜索1')
             pic = PicSearch(ctx)
             pic.anime_search(ctx.PicUrl)
     elif ctx.Content == '#以图搜番' or ctx.Content == '#以图搜图':
