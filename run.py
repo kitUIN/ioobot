@@ -77,7 +77,35 @@ def _Group_Pic(ctx: GroupMsg):
 
 # -----------------------指令-----------------------------------------------
 
+@bot.on_group_msg()
+@deco.in_content('#插件')
+def plugin(ctx: GroupMsg, msg=''):
+    if ctx.FromUserId == config['superAdmin']:
+        if ctx.Content == '#插件列表':
+            plugins = bot.plugins
+            for i in range(len(plugins)):
+                msg += plugins[i]
+            sendMsg.send_text(ctx, msg)
+        elif ctx.Content == '#插件重置':
+            bot.reload_plugins()
+            msg = '已重置\r\n当前插件：'
+            plugins = bot.plugins
+            for i in range(len(plugins)):
+                msg += '\r\n' + plugins[i]
+            sendMsg.send_text(ctx, msg)
+        elif ctx.Content[:5] == '#插件禁用':
+            remove = ctx.Content[6:]
+            bot.remove_plugin(remove)
+            bot.reload_plugins()
+            msg = '已禁用{}\r\n当前插件：'.format(remove)
+            plugins = bot.plugins
+            for i in range(len(plugins)):
+                msg += '\r\n' + plugins[i]
+            sendMsg.send_text(ctx, msg)
+    return
 
+
+'''
 @bot.on_group_msg
 @deco.ignore_botself
 @deco.equal_content('test')
@@ -85,15 +113,6 @@ def test(ctx):
     SendMsg.send_pic(ctx, '标题:水着メルトwww.pixiv.net/artworks/76508807page:0作者:PDXenwww.pixiv.net/users/11945252',
                      'https://cdn.jsdelivr.net/gh/laosepi/setu/pics_original/76508807_p0.png')
     # action.sendFriendText(ctx, ctx.master)
-
-
-@deco.equal_content('#重置插件')
-def plugin(ctx: GroupMsg):
-    bot.reload_plugins()
-    logger.info(bot.plugins)
-
-
-'''
 @bot.on_group_msg
 @deco.ignore_botself
 @deco.equal_content('test')

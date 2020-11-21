@@ -103,7 +103,7 @@ class Pixiv:
             for x in range(len(details['urls'])):
                 sendMsg.send_pic(self.ctx, picPath=self.path + '/' + str(self.id) + '_' + str(x) + '.jpg')
         else:
-            sendMsg.send_text(self.ctx, '请先使用#p {}'.format(str(self.id)))
+            self.get_illust()
         # time.sleep(3)
         # os.remove(pic_path)
 

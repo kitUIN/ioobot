@@ -57,8 +57,10 @@ class PicSearch:
             res = saucenao.search(url)
             raw = res.raw[0]
             if raw.similarity > 80:
-                msg = '缩略图展示↑↑↑\r\n标题:{}\r\n作者:{}\r\n作者id:{}\r\n作品id:{}\r\n直通车:{}\r\n'.format(
+                msg = '缩略图展示↑↑↑\r\n标题:{}\r\n作者:{}\r\n作者id:{}\r\n作品id:{}\r\n直通车:{}'.format(
                     raw.title, raw.author, raw.member_id, raw.pixiv_id, raw.url)
+                if raw.pixiv_id != '':
+                    msg += '\r\n使用命令获得原图：p d {}'.format(raw.pixiv_id)
                 logger.info('搜索成功')
                 saucenao.download_thumbnail(raw.thumbnail)
                 sendMsg.send_pic(self.ctx, text=msg, picPath=os.getcwd()+'/thumbnail')
