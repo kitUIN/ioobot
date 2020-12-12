@@ -1,4 +1,5 @@
 import datetime
+import json
 import os
 import re
 
@@ -34,6 +35,24 @@ class Pixiv:
         else:
             _REQUESTS_KWARGS = {}
         self.api = AppPixivAPI(**_REQUESTS_KWARGS)
+        if config['refresh_token'] in vars() or config['access_token'] in vars():  # 保存token
+            try:
+                self.api.set_auth(config['access_token'], config['refresh_token'])
+                if not (config['refresh_token'] in vars() or config['access_token'] in vars()) or (
+                        self.api.refresh_token != config['refresh_token'] or self.api.access_token != config[
+                    'access_token']):
+                    # 查重
+                    with open('config.json', 'wr', encoding='utf-8') as f:
+                        tmpc = json.loads(f.read())
+                        tmpc['refresh_token'] = self.api.refresh_token
+                        tmpc['access_token'] = self.api.access_token
+                    f.write(tmpc)
+                    logger.success('PixivToken保存成功~')
+                f.close()
+            except PixivError:
+                self.api.login(self.username, self.password)
+        else:
+            self.api.login(self.username, self.password)
 
     @staticmethod
     def _get_user(uers):
@@ -67,9 +86,9 @@ class Pixiv:
         details['caption']: str = data['caption']  # 说明
         details['create_date']: str = data['create_date']  # 创建日期
         details['page_count']: str = data['page_count']  # 页数
-        details['user']: dict = self._get_user(data['user'])
+        details['user']: dict = self._get_user(data['user'])  # 作者
         details['tags']: list = self._get_tags(data['tags'])  # tag
-        details['urls']: list = self._get_urls(data)
+        details['urls']: list = self._get_urls(data)  # 地址
         return details
 
     def get_illust(self):

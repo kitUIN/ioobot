@@ -1,4 +1,5 @@
-import base64
+import datetime
+import json
 import os
 import random
 import re
@@ -9,10 +10,11 @@ import requests
 from botoy import FriendMsg, GroupMsg, EventMsg
 from botoy.refine import refine_group_admin_event_msg, refine_group_join_event_msg
 from loguru import logger
+from pixivpy3 import *
 from retrying import retry
 from tinydb.operations import add
 
-from plugins.ioolib.dbs import Q, db_tmp, config, group_config, friend_config, Action
+from plugins.ioolib.dbs import Q, db_tmp, config, group_config, friend_config, Action, pixiv_db
 from plugins.ioolib.send import Send
 
 # ------------------正则------------------
@@ -23,6 +25,112 @@ action = Action(qq=config['BotQQ'])
 
 
 # ---------------------------------------
+class pixivsetu:
+    def __init__(self, username, password, ctx, tags=None):
+        if tags is None:
+            tags = list()
+        self.username = username
+        self.password = password
+        self.tags = tags
+        self.id = 0
+        self.ctx = ctx
+        self.path = os.getcwd() + '/pixiv'
+        if config['pixiv']:
+            _REQUESTS_KWARGS = {
+                'proxies': {
+                    'https': config['proxy'],  # 'http://127.0.0.1:10809'  代理
+                },
+                'verify': True,  # PAPI use https, an easy way is disable requests SSL verify
+            }
+        else:
+            _REQUESTS_KWARGS = {}
+        self.api = AppPixivAPI(**_REQUESTS_KWARGS)
+        if config['refresh_token'] in vars() or config['access_token'] in vars():  # 保存token
+            try:
+                self.api.set_auth(config['access_token'], config['refresh_token'])
+                if not (config['refresh_token'] in vars() or config['access_token'] in vars()) or (
+                        self.api.refresh_token != config['refresh_token'] or self.api.access_token != config[
+                    'access_token']):
+                    # 查重
+                    with open('config.json', 'wr', encoding='utf-8') as f:
+                        tmpc = json.loads(f.read())
+                        tmpc['refresh_token'] = self.api.refresh_token
+                        tmpc['access_token'] = self.api.access_token
+                    f.write(tmpc)
+                    logger.success('PixivToken保存成功~')
+                f.close()
+            except PixivError:
+                self.api.login(self.username, self.password)
+        else:
+            self.api.login(self.username, self.password)
+
+    @staticmethod
+    def _get_tags(data):
+        tags = list()
+        for x in data:
+            tags.append(x['name'])
+        return tags
+
+    @staticmethod
+    def _get_user(uers):
+        user = dict()
+        user['id'] = uers['id']
+        user['name'] = uers['name']
+        return user
+
+    def _get_details(self, data) -> dict:
+        details = dict()
+        details['id']: str = self.id  # id
+        details['title']: str = data['title']  # 标题
+        details['create_date']: str = data['create_date']  # 创建日期
+        details['user']: dict = self._get_user(data['user'])  # 作者
+        details['tags']: list = self._get_tags(data['tags'])  # tag
+        return details
+
+    @staticmethod
+    def _get_id(illust: list) -> dict:  # 用于查重
+        ids = dict()
+        for x in range(len(illust)):
+            ids[x] = illust[x]['id']
+        return ids
+
+    def send_pixiv(self):
+        if self.tags != []:  # 有标签
+            json_result = self.api.search_illust(self.tags)
+            illusts = json_result.illusts
+            if illusts is None:  # 错误报告
+                logger.error(json_result['error'])
+            ids = self._get_id(illusts)
+            for i in ids:
+                pixiv_raw = pixiv_db.search(Q['illust_id'] == ids[i])
+                if pixiv_raw:
+                    continue
+                else:
+                    self.id = int(ids[i])
+                    pic = illusts[i]['image_urls']['square_medium']
+                    self.api.download(pic, path=self.path, fname=str(self.id) + '.jpg')
+                    details = self._get_details(illusts[i])
+                    msg = '标题:{}\r\nid {}\r\n作者:{}\r\nid {}\r\n \'标签:{}\r\n下载图片指令使用：p d {}'.format(details['title'],
+                                                                                                   str(self.id),
+                                                                                                   details['user'][
+                                                                                                       'name'],
+                                                                                                   details['user'][
+                                                                                                       'id'],
+                                                                                                   details['tags'],
+                                                                                                   str(self.id))
+
+                    sendMsg.send_pic(self.ctx, text=msg, picPath=self.path + '/' + ids[i] + '.jpg')
+                    logger.info('ID{}导入到数据库'.format(str(self.id)))
+                    pixiv_db.insert({'illust_id': self.id, 'details': details,
+                                     'time': datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S')})
+                    return
+
+
+        else:
+            # t =self.api.illust_ranking()
+            # sendMsg.send_pic(self.ctx, picPath=self.path + '/' + str(self.id) + '.jpg')
+            # todo rank
+            pass
 
 
 class Setu:
@@ -72,16 +180,6 @@ class Setu:
             if self.db_config['at']:
                 return '\r\n' + msg
         return msg
-
-    def base_64(self, path):
-        try:
-            with open(path, 'rb') as f:
-                code = base64.b64encode(f.read()).decode()  # 读取文件内容，转换为base64编码
-                logger.info('本地base64转码~')
-                return code
-        except:
-            logger.error('路径{} ,base64转码出错,检查图片路径~'.format(path))
-            return
 
     def if_sent(self, url):  # 判断是否发送过
         filename = os.path.basename(url)
@@ -409,6 +507,7 @@ def receive_friend_msg(ctx: FriendMsg):
         friend_info = re.search(pattern_setu, ctx.Content)  # 提取关键字
         if friend_info:
             Setu(ctx, friend_info[2], friend_info[1], friend_info[3]).main()
+
 
 @deco.queued_up
 @deco.ignore_botself
