@@ -24,10 +24,10 @@ class Pixiv:
         self.id = id
         self.ctx = ctx
         self.path = os.getcwd() + '/pixiv'
-        if config['pixiv_proxies']:
+        if config['pixiv']:
             _REQUESTS_KWARGS = {
                 'proxies': {
-                    'https': 'http://127.0.0.1:10809',  # 代理
+                    'https': config['proxy'],  # 'http://127.0.0.1:10809'  代理
                 },
                 'verify': True,  # PAPI use https, an easy way is disable requests SSL verify
             }

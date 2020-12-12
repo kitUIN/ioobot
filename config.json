@@ -10,6 +10,7 @@
   "LoliconAPIKey": "",
   "SauceNAOKEY": "",
   "search_proxies": false,
+  "proxy": "http://127.0.0.1:10809",
   "netease": false,
   "netease_username": "",
   "netease_password": "",

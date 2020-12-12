@@ -16,7 +16,7 @@ class PicSearch:
     if config['search_proxies']:
         _REQUESTS_KWARGS = {
             'proxies': {
-                'https': 'http://127.0.0.1:10809',
+                'https': config['proxy'],
             }
             # 如果需要代理
         }
