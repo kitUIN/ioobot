@@ -48,26 +48,23 @@ class pixivsetu:
             }
         else:
             _REQUESTS_KWARGS = {}
+        self.refresh_token = config['refresh_token']
+        self.access_token = config['access_token']
         self.api = AppPixivAPI(**_REQUESTS_KWARGS)
-        if config['refresh_token'] in vars() or config['access_token'] in vars():  # 保存token
-            try:
-                self.api.set_auth(config['access_token'], config['refresh_token'])
-                if not (config['refresh_token'] in vars() or config['access_token'] in vars()) or (
-                        self.api.refresh_token != config['refresh_token'] or self.api.access_token != config[
-                    'access_token']):
-                    # 查重
-                    with open('config.json', 'wr', encoding='utf-8') as f:
-                        tmpc = json.loads(f.read())
-                        tmpc['refresh_token'] = self.api.refresh_token
-                        tmpc['access_token'] = self.api.access_token
-                    f.write(tmpc)
-                    logger.success('PixivToken保存成功~')
-                f.close()
-            except PixivError:
-                self.api.login(self.username, self.password)
-        else:
+        if self.access_token == '' and self.refresh_token == '':  # 保存token
             self.api.login(self.username, self.password)
-
+            logger.info('pixiv——账号登陆')
+            if self.api.refresh_token != config['refresh_token'] or self.api.access_token != config['access_token']:
+                # 查重
+                with open('config.json', 'w', encoding='utf-8') as f:
+                    config['refresh_token'] = self.api.refresh_token
+                    config['access_token'] = self.api.access_token
+                    f.write(json.dumps(config))
+                    f.close()
+                logger.success('PixivToken重载成功~')
+        else:
+            self.api.set_auth(config['access_token'], config['refresh_token'])
+            logger.info('pixiv——token登陆')
     @staticmethod
     def _get_tags(data):
         tags = list()
@@ -117,14 +114,13 @@ class pixivsetu:
             tags = []
             tagss = ''
         if tags != []:  # 有标签
-            search_target = 'partial_match_for_tags'
             tagss = ''
             for x in tags:
                 tagss += x + ''
+            tagss = tagss[len(tagss)-1:]
             if r18 >= 1:
                 tagss += 'R-18'
-                search_target = 'exact_match_for_tags'
-            json_result = self.api.search_illust(tagss, search_target=search_target)
+            json_result = self.api.search_illust(tagss, search_target='exact_match_for_tags')
         else:
             if r18 >= 1:
                 mode = 'day_r18'
@@ -145,13 +141,15 @@ class pixivsetu:
                 pic = illusts[i]['image_urls']['square_medium']
                 self.api.download(pic, path=self.path, fname=str(self.id) + '.jpg')
                 details = self._get_details(illusts[i])
+                if r18 < 1 and 'R-18' in details['tags']:
+                    continue
                 msg = '标题:{}\r\nid {}\r\n作者:{}\r\nid {}\r\n \'标签:{}\r\n下载原图指令使用：\r\np d {}'.format(
                     details['title'], str(self.id), details['user']['name'], details['user']['id'], details['tags'],
                     str(self.id))
                 if self.ctx.__class__.__name__ == 'GroupMsg':
                     msg += '\r\nREVOKE[25]'
                 sendMsg.send_pic(self.ctx, text=msg, picPath=self.path + '/' + str(self.id) + '.jpg')
-                logger.info('ID{}导入到数据库'.format(str(self.id)))
+                logger.info('ID{}导入到数据库，已发送'.format(str(self.id)))
                 db_tmp.table('pixivlist').insert({'illust_id': self.id, 'details': details,
                                                   'time': datetime.datetime.strftime(datetime.datetime.now(),
                                                                                      '%Y-%m-%d %H:%M:%S')})
@@ -322,9 +320,8 @@ class Setu:
         else:
             tags = []
         try:
+            logger.info('向Pixivのapi请求发送{}张'.format(self.api_pixiv_toget_num))
             api2.send_pixiv(tags, r18, self.api_pixiv_toget_num)
-            logger.info(
-                '从Pixivのapi实际发送{}张'.format(self.api_pixiv_toget_num))
         except Exception as e:
             logger.error('api2 boom~')
             logger.error(e)
