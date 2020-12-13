@@ -143,7 +143,7 @@ class pixivsetu:
                 details = self._get_details(illusts[i])
                 if r18 < 1 and 'R-18' in details['tags']:
                     continue
-                msg = '标题:{}\r\nid {}\r\n作者:{}\r\nid {}\r\n \'标签:{}\r\n下载原图指令使用：\r\np d {}'.format(
+                msg = '标题:{}\r\nid {}\r\n作者:{}\r\nid {}\r\n标签:{}\r\n下载原图指令使用：\r\np d {}'.format(
                     details['title'], str(self.id), details['user']['name'], details['user']['id'], details['tags'],
                     str(self.id))
                 if self.ctx.__class__.__name__ == 'GroupMsg':
