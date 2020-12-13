@@ -30,6 +30,8 @@ PS：测试环境:
   "pixiv": false,               #[pixiv]开关(需要梯子)
   "pixiv_username": "",         #[pixiv]账号
   "pixiv_password": "",         #[pixiv]密码
+  "refresh_token": "",          #[pixiv]token
+  "access_token": "",           #[pixiv]token
   "bilibili": false,            #[bilibili]开关
   "bilibili_username": "",      #[bilibili]账号
   "bilibili_password": ""       #[bilibili]密码

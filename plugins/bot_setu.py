@@ -116,9 +116,11 @@ class pixivsetu:
         if tags is None:
             tags = []
         if tags != []:  # 有标签
+            search_target = 'partial_match_for_tags'
             if r18 >= 1:
                 tags.append('R-18')
-            json_result = self.api.search_illust(tags)
+                search_target = 'exact_match_for_tags'
+            json_result = self.api.search_illust(tags, search_target=search_target)
         else:
             if r18 >= 1:
                 mode = 'day_r18'
@@ -139,9 +141,11 @@ class pixivsetu:
                 pic = illusts[i]['image_urls']['square_medium']
                 self.api.download(pic, path=self.path, fname=str(self.id) + '.jpg')
                 details = self._get_details(illusts[i])
-                msg = '标题:{}\r\nid {}\r\n作者:{}\r\nid {}\r\n \'标签:{}\r\n下载原图指令使用：\r\np d {}\r\nREVOKE[25]'.format(
+                msg = '标题:{}\r\nid {}\r\n作者:{}\r\nid {}\r\n \'标签:{}\r\n下载原图指令使用：\r\np d {}'.format(
                     details['title'], str(self.id), details['user']['name'], details['user']['id'], details['tags'],
                     str(self.id))
+                if self.ctx.__class__.__name__ == 'GroupMsg':
+                    msg += '\r\nREVOKE[25]'
                 sendMsg.send_pic(self.ctx, text=msg, picPath=self.path + '/' + str(self.id) + '.jpg')
                 logger.info('ID{}导入到数据库'.format(str(self.id)))
                 db_tmp.table('pixivlist').insert({'illust_id': self.id, 'details': details,
@@ -164,7 +168,6 @@ class Setu:
         self.r18_OnOff_keyword = whether_r18  # 是否r18
         self.api_0_realnum = 0
         self.api_1_realnum = 0
-        self.api_2_realnum = 0
         self.api_pixiv_realnum = 0
         self.api1_toget_num = 0
         self.api_pixiv_toget_num = 0
@@ -317,7 +320,7 @@ class Setu:
         try:
             api2.send_pixiv(tags, r18, self.api_pixiv_toget_num)
             logger.info(
-                '从Pixivのapi实际发送{}张'.format(self.api_1_realnum))
+                '从Pixivのapi实际发送{}张'.format(self.api_pixiv_realnum))
         except Exception as e:
             logger.error('api2 boom~')
             logger.error(e)
@@ -457,10 +460,12 @@ class Setu:
     @_freq  # 频率
     def send(self):  # 判断数量
         self.api_0()
-        if len(self.tag) == 1:
-            self.api_1()
         if config['pixiv'] and config["pixiv_username"] != '' and config["pixiv_password"] != '' and len(self.tag) != 0:
             self.api_2()
+            return
+        if len(self.tag) == 1:
+            self.api_1()
+            return
         if self.api_0_realnum == 0 and self.api_1_realnum == 0 and self.api_pixiv_realnum == 0:
             sendMsg.send_text(self.ctx, self.db_config['msg_notFind'], self.db_config['at_warning'])
             return

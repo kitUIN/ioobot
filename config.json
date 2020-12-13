@@ -17,6 +17,8 @@
   "pixiv": false,
   "pixiv_username": "",
   "pixiv_password": "",
+  "refresh_token": "",
+  "access_token": "",
   "bilibili": false,
   "bilibili_username": "",
   "bilibili_password": ""
