@@ -23,6 +23,7 @@ PS：测试环境:
   "LoliconAPIKey": "",          #[setu模块]LOLICON的apikey
   "SauceNAOKEY": "",            #[识图姬]SauceNAO的访问key
   "search_proxies": false,      #[识图姬]代理开关
+  "proxy": "http://127.0.0.1:10809",#[识图姬][pixiv][setu模块]代理端口
   "netease": false,             #[网易云vip解析]开关
   "netease_username": "",       #[网易云vip解析]账号
   "netease_password": "",       #[网易云vip解析]密码

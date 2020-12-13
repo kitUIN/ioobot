@@ -22,16 +22,20 @@ pattern_setu = '来(.*?)[点丶份张幅](.*?)的?(|r18)[色瑟涩🐍][图圖�
 # ---------------------------------------
 sendMsg = Send()
 action = Action(qq=config['BotQQ'])
+if config['pixiv'] and config["pixiv_username"] != '' and config["pixiv_password"] != '':
+    _USERNAME = config["pixiv_username"]
+    _PASSWORD = config["pixiv_password"]
 
 
 # ---------------------------------------
 class pixivsetu:
-    def __init__(self, username, password, ctx, tags=None):
-        if tags is None:
-            tags = list()
+    def __init__(self,
+                 username,
+                 password,
+                 ctx
+                 ):
         self.username = username
         self.password = password
-        self.tags = tags
         self.id = 0
         self.ctx = ctx
         self.path = os.getcwd() + '/pixiv'
@@ -78,13 +82,27 @@ class pixivsetu:
         user['name'] = uers['name']
         return user
 
+    @staticmethod
+    def _get_urls(data):
+        urls = list()
+        if data['page_count'] == 1:
+            urls.append(data['meta_single_page']['original_image_url'])
+        else:
+            for x in data['meta_pages']:
+                urls.append(x['image_urls']['original'])
+        return urls
+
     def _get_details(self, data) -> dict:
         details = dict()
         details['id']: str = self.id  # id
         details['title']: str = data['title']  # 标题
+        details['type']: str = data['type']  # 种类
+        details['caption']: str = data['caption']  # 说明
         details['create_date']: str = data['create_date']  # 创建日期
+        details['page_count']: str = data['page_count']  # 页数
         details['user']: dict = self._get_user(data['user'])  # 作者
         details['tags']: list = self._get_tags(data['tags'])  # tag
+        details['urls']: list = self._get_urls(data)  # 地址
         return details
 
     @staticmethod
@@ -94,43 +112,46 @@ class pixivsetu:
             ids[x] = illust[x]['id']
         return ids
 
-    def send_pixiv(self):
-        if self.tags != []:  # 有标签
-            json_result = self.api.search_illust(self.tags)
-            illusts = json_result.illusts
-            if illusts is None:  # 错误报告
-                logger.error(json_result['error'])
-            ids = self._get_id(illusts)
-            for i in ids:
-                pixiv_raw = pixiv_db.search(Q['illust_id'] == ids[i])
-                if pixiv_raw:
-                    continue
-                else:
-                    self.id = int(ids[i])
-                    pic = illusts[i]['image_urls']['square_medium']
-                    self.api.download(pic, path=self.path, fname=str(self.id) + '.jpg')
-                    details = self._get_details(illusts[i])
-                    msg = '标题:{}\r\nid {}\r\n作者:{}\r\nid {}\r\n \'标签:{}\r\n下载图片指令使用：p d {}'.format(details['title'],
-                                                                                                   str(self.id),
-                                                                                                   details['user'][
-                                                                                                       'name'],
-                                                                                                   details['user'][
-                                                                                                       'id'],
-                                                                                                   details['tags'],
-                                                                                                   str(self.id))
-
-                    sendMsg.send_pic(self.ctx, text=msg, picPath=self.path + '/' + ids[i] + '.jpg')
-                    logger.info('ID{}导入到数据库'.format(str(self.id)))
-                    pixiv_db.insert({'illust_id': self.id, 'details': details,
-                                     'time': datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S')})
-                    return
-
-
+    def send_pixiv(self, tags=None, r18=0, retry=1):
+        if tags is None:
+            tags = []
+        if tags != []:  # 有标签
+            if r18 >= 1:
+                tags.append('R-18')
+            json_result = self.api.search_illust(tags)
         else:
-            # t =self.api.illust_ranking()
-            # sendMsg.send_pic(self.ctx, picPath=self.path + '/' + str(self.id) + '.jpg')
-            # todo rank
-            pass
+            if r18 >= 1:
+                mode = 'day_r18'
+            else:
+                mode = 'day'
+            json_result = self.api.illust_ranking(mode=mode)
+        illusts = json_result.illusts
+        if illusts is None:  # 错误报告
+            logger.error(json_result['error'])
+            return
+        ids = self._get_id(illusts)
+        for i in ids:
+            pixiv_raw = db_tmp.table('pixivlist').search(Q['illust_id'] == ids[i])
+            if pixiv_raw:
+                continue
+            else:
+                self.id = ids[i]
+                pic = illusts[i]['image_urls']['square_medium']
+                self.api.download(pic, path=self.path, fname=str(self.id) + '.jpg')
+                details = self._get_details(illusts[i])
+                msg = '标题:{}\r\nid {}\r\n作者:{}\r\nid {}\r\n \'标签:{}\r\n下载原图指令使用：\r\np d {}\r\nREVOKE[25]'.format(
+                    details['title'], str(self.id), details['user']['name'], details['user']['id'], details['tags'],
+                    str(self.id))
+                sendMsg.send_pic(self.ctx, text=msg, picPath=self.path + '/' + str(self.id) + '.jpg')
+                logger.info('ID{}导入到数据库'.format(str(self.id)))
+                db_tmp.table('pixivlist').insert({'illust_id': self.id, 'details': details,
+                                                  'time': datetime.datetime.strftime(datetime.datetime.now(),
+                                                                                     '%Y-%m-%d %H:%M:%S')})
+                pixiv_db.insert({'illust_id': self.id, 'details': details,
+                                 'time': datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S')})
+                retry -= 1
+                if retry == 0:
+                    return
 
 
 class Setu:
@@ -143,6 +164,7 @@ class Setu:
         self.r18_OnOff_keyword = whether_r18  # 是否r18
         self.api_0_realnum = 0
         self.api_1_realnum = 0
+        self.api_2_realnum = 0
         self.api_pixiv_realnum = 0
         self.api1_toget_num = 0
         self.api_pixiv_toget_num = 0
@@ -274,6 +296,31 @@ class Setu:
                 # 打印获取到多少条
             else:
                 logger.warning('api1:{}'.format(res.status_code))
+
+    def api_2(self):  # pixiv
+        self.api_pixiv_toget_num = self.num - self.api_0_realnum - self.api_1_realnum  # 兼容api1 兼容api0
+        if self.api_pixiv_toget_num <= 0:
+            return
+        if self.setu_level == 1:
+            r18 = 0
+        elif self.setu_level == 3:
+            r18 = random.choice([0, 1])
+        elif self.setu_level == 2:
+            r18 = 1
+        else:
+            r18 = 0
+        api2 = pixivsetu(_USERNAME, _PASSWORD, self.ctx)
+        if len(self.tag) != 1 or (len(self.tag[0]) != 0 and not self.tag[0].isspace()):  # 如果tag不为空(字符串字数不为零且不为空)
+            tags = self.tag
+        else:
+            tags = []
+        try:
+            api2.send_pixiv(tags, r18, self.api_pixiv_toget_num)
+            logger.info(
+                '从Pixivのapi实际发送{}张'.format(self.api_1_realnum))
+        except Exception as e:
+            logger.error('api2 boom~')
+            logger.error(e)
 
     def _freq(func):
         def wrapper(self, *args, **kwargs):
@@ -412,6 +459,8 @@ class Setu:
         self.api_0()
         if len(self.tag) == 1:
             self.api_1()
+        if config['pixiv'] and config["pixiv_username"] != '' and config["pixiv_password"] != '' and len(self.tag) != 0:
+            self.api_2()
         if self.api_0_realnum == 0 and self.api_1_realnum == 0 and self.api_pixiv_realnum == 0:
             sendMsg.send_text(self.ctx, self.db_config['msg_notFind'], self.db_config['at_warning'])
             return
