@@ -115,12 +115,16 @@ class pixivsetu:
     def send_pixiv(self, tags=None, r18=0, retry=1):
         if tags is None:
             tags = []
+            tagss = ''
         if tags != []:  # 有标签
             search_target = 'partial_match_for_tags'
+            tagss = ''
+            for x in tags:
+                tagss += x + ''
             if r18 >= 1:
-                tags.append('R-18')
+                tagss += 'R-18'
                 search_target = 'exact_match_for_tags'
-            json_result = self.api.search_illust(tags, search_target=search_target)
+            json_result = self.api.search_illust(tagss, search_target=search_target)
         else:
             if r18 >= 1:
                 mode = 'day_r18'
@@ -320,7 +324,7 @@ class Setu:
         try:
             api2.send_pixiv(tags, r18, self.api_pixiv_toget_num)
             logger.info(
-                '从Pixivのapi实际发送{}张'.format(self.api_pixiv_realnum))
+                '从Pixivのapi实际发送{}张'.format(self.api_pixiv_toget_num))
         except Exception as e:
             logger.error('api2 boom~')
             logger.error(e)
