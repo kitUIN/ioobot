@@ -14,18 +14,17 @@ from pixivpy3 import *
 from retrying import retry
 from tinydb.operations import add
 
-from plugins.ioolib.dbs import Q, db_tmp, config, group_config, friend_config, Action, pixiv_db
+from plugins.ioolib.dbs import Q, db_tmp, config, group_config, friend_config, Action, pixiv_db, rank
 from plugins.ioolib.send import Send
 
 # ------------------正则------------------
 pattern_setu = '来(.*?)[点丶份张幅](.*?)的?(|r18)[色瑟涩🐍][图圖🤮]'
 # ---------------------------------------
-sendMsg = Send()
 action = Action(qq=config['BotQQ'])
 if config['pixiv'] and config["pixiv_username"] != '' and config["pixiv_password"] != '':
     _USERNAME = config["pixiv_username"]
     _PASSWORD = config["pixiv_password"]
-
+sendMsg = Send()
 
 # ---------------------------------------
 class pixivsetu:
@@ -65,6 +64,7 @@ class pixivsetu:
         else:
             self.api.set_auth(config['access_token'], config['refresh_token'])
             logger.info('pixiv——token登陆')
+
     @staticmethod
     def _get_tags(data):
         tags = list()
@@ -109,27 +109,33 @@ class pixivsetu:
             ids[x] = illust[x]['id']
         return ids
 
-    def send_pixiv(self, tags=None, r18=0, retry=1):
-        if tags is None:
-            tags = []
-            tagss = ''
-        if tags != []:  # 有标签
-            tagss = ''
-            for x in tags:
-                tagss += x + ''
-            tagss = tagss[len(tagss)-1:]
-            if r18 >= 1:
-                tagss += 'R-18'
-            json_result = self.api.search_illust(tagss, search_target='exact_match_for_tags')
-        else:
-            if r18 >= 1:
-                mode = 'day_r18'
+    def inform_build(self, date):
+        json_result = self.api.illust_ranking(mode='day', date=date)
+        illusts1 = json_result.illusts
+        rank.insert({'date': date, 'r18': False, 'illusts': illusts1})
+        json_result = self.api.illust_ranking(mode='day_r18', date=date)
+        illusts2 = json_result.illusts
+        rank.insert({'date': date, 'r18': True, 'illusts': illusts2})
+
+    def rank_build(self, num=1):
+        now = datetime.datetime.now()- datetime.timedelta(days=1)
+        date = now.strftime('%Y-%m-%d')
+        while num > 0:
+            pixiv_raw = rank.search(Q['date'] == date)
+            if pixiv_raw:
+                time = now - datetime.timedelta(days=1)
+                date = time.strftime('%Y-%m-%d')
+                logger.info(date)
             else:
-                mode = 'day'
-            json_result = self.api.illust_ranking(mode=mode)
-        illusts = json_result.illusts
-        if illusts is None:  # 错误报告
-            logger.error(json_result['error'])
+                self.inform_build(date)
+                logger.info('{}排行榜导入数据库'.format(date))
+                time = now - datetime.timedelta(days=1)
+                date = time.strftime('%Y-%m-%d')
+                num -= 1
+
+
+    def illusts_build(self, illusts, retry, r18):
+        if retry == 0:
             return
         ids = self._get_id(illusts)
         for i in ids:
@@ -157,7 +163,50 @@ class pixivsetu:
                                  'time': datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S')})
                 retry -= 1
                 if retry == 0:
-                    return
+                    return 0
+        return retry
+
+    def retry_send1(self, tagss, retry, r18):  # 发送主体1(循环)
+        if r18 >= 1:
+            tagss += 'R-18'
+        json_result = self.api.search_illust(tagss, search_target='exact_match_for_tags')
+        illusts = json_result.illusts
+        if illusts is None:  # 错误报告
+            logger.error(json_result['error'])
+            return
+        self.illusts_build(illusts, retry, r18)
+        return
+
+    def retry_send2(self, retry, r18):  # 发送主体2(循环)
+        if r18 >= 1:
+            mode = True
+        else:
+            mode = False
+        now = datetime.datetime.now()
+        cishu = retry
+        while cishu > 0:
+            time = now - datetime.timedelta(days=1)
+            date = time.strftime('%Y-%m-%d')
+            illusts = rank.search((Q.date == date) & (Q.r18 == mode))
+            if illusts:
+                illusts = illusts[0]['illusts']
+                cishu = self.illusts_build(illusts, cishu, r18)
+            else:
+
+                self.rank_build()
+
+    def send_pixiv(self, tags=None, r18=0, retry=1):
+        if tags is None:
+            tags = []
+            tagss = ''
+        if tags:  # 有标签
+            tagss = ''
+            for x in tags:
+                tagss += x + ''
+            tagss = tagss[len(tagss) - 1:]
+            self.retry_send1(tagss, retry, r18)
+        else:
+            self.retry_send2(retry, r18)
 
 
 class Setu:
@@ -322,6 +371,7 @@ class Setu:
         try:
             logger.info('向Pixivのapi请求发送{}张'.format(self.api_pixiv_toget_num))
             api2.send_pixiv(tags, r18, self.api_pixiv_toget_num)
+            self.api_pixiv_realnum = self.api_pixiv_toget_num
         except Exception as e:
             logger.error('api2 boom~')
             logger.error(e)
@@ -458,12 +508,9 @@ class Setu:
         else:  # 好友会话
             self.friend()
 
-    @_freq  # 频率
+    # @_freq  # 频率
     def send(self):  # 判断数量
-        self.api_0()
-        if config['pixiv'] and config["pixiv_username"] != '' and config["pixiv_password"] != '' and len(self.tag) != 0:
-            self.api_2()
-            return
+        self.api_2()
         if len(self.tag) == 1:
             self.api_1()
             return
@@ -475,6 +522,8 @@ class Setu:
                 tag=self.tag,
                 num=self.api_0_realnum + self.api_1_realnum + self.api_pixiv_realnum
             ), self.db_config['at_warning'])
+        else:
+            return
 
 
 # ------------------------------权限db-------------

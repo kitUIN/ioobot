@@ -76,31 +76,43 @@ def _Group_Pic(ctx: GroupMsg):
 
 
 # -----------------------指令-----------------------------------------------
+def build_piugin():
+    msg = '当前插件：'
+    plugins = bot.plugins
+    for i in range(len(plugins)):
+        msg += '\r\n' + plugins[i]
+    removed_plugins = bot.removed_plugins
+    msg += '\r\n已禁用插件：'
+    for i in range(len(removed_plugins)):
+        msg += '\r\n' + removed_plugins[i]
+    return msg
+
 
 @bot.on_group_msg
 @deco.in_content('#插件')
 def plugin(ctx: GroupMsg, msg=''):
     if ctx.FromUserId == config['superAdmin']:
         if ctx.Content == '#插件列表':
-            plugins = bot.plugins
-            for i in range(len(plugins)):
-                msg += plugins[i]
+            msg += build_piugin()
             sendMsg.send_text(ctx, msg)
         elif ctx.Content == '#插件重置':
             bot.reload_plugins()
-            msg = '已重置\r\n当前插件：'
-            plugins = bot.plugins
-            for i in range(len(plugins)):
-                msg += '\r\n' + plugins[i]
+            msg = '已重置\r\n'
+            msg += build_piugin()
             sendMsg.send_text(ctx, msg)
         elif ctx.Content[:5] == '#插件禁用':
             remove = ctx.Content[6:]
             bot.remove_plugin(remove)
             bot.reload_plugins()
-            msg = '已禁用{}\r\n当前插件：'.format(remove)
-            plugins = bot.plugins
-            for i in range(len(plugins)):
-                msg += '\r\n' + plugins[i]
+            msg = '已禁用{}\r\n'.format(remove)
+            msg += build_piugin()
+            sendMsg.send_text(ctx, msg)
+        elif ctx.Content[:5] == '#插件启动':
+            start = ctx.Content[6:]
+            bot.reload_plugin(start)
+            bot.reload_plugins()
+            msg = '已启用{}\r\n'.format(start)
+            msg += build_piugin()
             sendMsg.send_text(ctx, msg)
     return
 
