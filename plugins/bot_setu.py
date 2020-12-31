@@ -17,6 +17,8 @@ from tinydb.operations import add
 from plugins.ioolib.dbs import Q, db_tmp, config, group_config, friend_config, Action, pixiv_db, rank
 from plugins.ioolib.send import Send
 
+# 本插件基于yuban10703改编 https://github.com/yuban10703/OPQ-SetuBot
+# 由于yuban10703咕了很久，本人进行了大量魔改
 # ------------------正则------------------
 pattern_setu = '来(.*?)[点丶份张幅](.*?)的?(|r18)[色瑟涩🐍][图圖🤮]'
 # ---------------------------------------
@@ -25,6 +27,7 @@ if config['pixiv'] and config["pixiv_username"] != '' and config["pixiv_password
     _USERNAME = config["pixiv_username"]
     _PASSWORD = config["pixiv_password"]
 sendMsg = Send()
+
 
 # ---------------------------------------
 class pixivsetu:
@@ -38,7 +41,7 @@ class pixivsetu:
         self.id = 0
         self.ctx = ctx
         self.path = os.getcwd() + '/pixiv'
-        if config['pixiv']:
+        if config['pixiv_proxy']:
             _REQUESTS_KWARGS = {
                 'proxies': {
                     'https': config['proxy'],  # 'http://127.0.0.1:10809'  代理
@@ -118,7 +121,7 @@ class pixivsetu:
         rank.insert({'date': date, 'r18': True, 'illusts': illusts2})
 
     def rank_build(self, num=1):
-        now = datetime.datetime.now()- datetime.timedelta(days=1)
+        now = datetime.datetime.now() - datetime.timedelta(days=1)
         date = now.strftime('%Y-%m-%d')
         while num > 0:
             pixiv_raw = rank.search(Q['date'] == date)
@@ -132,7 +135,6 @@ class pixivsetu:
                 time = now - datetime.timedelta(days=1)
                 date = time.strftime('%Y-%m-%d')
                 num -= 1
-
 
     def illusts_build(self, illusts, retry, r18):
         if retry == 0:
@@ -169,6 +171,7 @@ class pixivsetu:
     def retry_send1(self, tagss, retry, r18):  # 发送主体1(循环)
         if r18 >= 1:
             tagss += 'R-18'
+        logger.debug('搜索标签:'.format(tagss))
         json_result = self.api.search_illust(tagss, search_target='exact_match_for_tags')
         illusts = json_result.illusts
         if illusts is None:  # 错误报告
@@ -224,25 +227,18 @@ class Setu:
         self.api_pixiv_toget_num = 0
         self.db_config = {}
 
-    def build_msg(self, title, artworkid, author, artistid, page, url_original):
-        if self.db_config['setuinfoLevel'] == 0:
-            msg = ''
-        elif self.db_config['setuinfoLevel'] == 1:
-            msg = '作品id:{}\r\n作者id:{}\r\nP:{}'.format(artworkid, artistid, page)
-        elif self.db_config['setuinfoLevel'] == 2:
-            msg = '作品:{}\r\n作者:{}\r\nP:{}\r\n原图:{}'.format(
-                'www.pixiv.net/artworks/' + str(artworkid),
-                'www.pixiv.net/users/' + str(artistid),
-                page,
-                url_original
-            )
-        elif self.db_config['setuinfoLevel'] == 3:
-            msg = '标题:{title}\r\n{purl}\r\npage:{page}\r\n作者:{author}\r\n{uurl}\r\n原图:{url_original}'.format(
+    def build_msg(self,
+                  level,
+                  title='',
+                  artworkid=0,
+                  author='',
+                  artistid=0,
+                  page=1,
+                  url_original=''):
+        if level == 'api0':  # yande.re
+            msg = '标题:{title}\r\n作者:{author}\r\n原图:{url_original}\r\n(需要科学上网)'.format(
                 title=title,
-                purl='www.pixiv.net/artworks/' + str(artworkid),
-                page=page,
                 author=author,
-                uurl='www.pixiv.net/users/' + str(artistid),
                 url_original=url_original
             )
         else:
@@ -257,57 +253,74 @@ class Setu:
                 return '\r\n' + msg
         return msg
 
-    def if_sent(self, url):  # 判断是否发送过
-        filename = os.path.basename(url)
-        data = db_tmp.table('sentlist').search((Q['id'] == self.db_config['callid']) & (Q['filename'] == filename))
+    def if_sent(self, id):  # 判断是否发送过
+        data = db_tmp.table('sentlist').search((Q['id'] == self.db_config['callid']) & (Q['pic_id'] == id))
         if data:  # 如果有数据
             if time.time() - data[0]['time'] <= self.db_config['clearSentTime']:  # 发送过
-                logger.info('id:{},{}发送过~'.format(self.db_config['callid'], filename))
+                logger.info('群{},id:{}发送过~'.format(self.db_config['callid'], id))
                 return True
             else:
                 db_tmp.table('sentlist').update({'time': time.time()},
-                                                (Q['id'] == self.db_config['callid']) & (Q['filename'] == filename))
+                                                (Q['id'] == self.db_config['callid']) & (Q['pic_id'] == id))
                 return False
         else:  # 没数据
-            db_tmp.table('sentlist').insert({'id': self.db_config['callid'], 'time': time.time(), 'filename': filename})
+            db_tmp.table('sentlist').insert({'id': self.db_config['callid'], 'time': time.time(), 'pic_id': id})
             return False
 
-    def api_0(self):
-        url = 'http://api.yuban10703.xyz:2333/setu_v4'
-        params = {'level': self.setu_level,
-                  'num': self.num,
-                  'tag': self.tag}
+    def api_0(self):  # https://yande.re/
+        url = 'https://yande.re/post.json'
+        if config['yanre_proxy']:
+            _REQUESTS_KWARGS = {
+                'proxies': {
+                    'https': config['proxy'],  # 'http://127.0.0.1:10809'  代理
+                }
+                }
+        else:
+            _REQUESTS_KWARGS = dict()
+        if len(self.tag) > 0:
+            tag_switch = 1
+        else:
+            tag_switch = 0
+        params = {'api_version':2,
+                  'tags': self.tag,
+                  'limit': self.num,
+                  'include_tags': tag_switch,
+                  'filter': 1}
         if self.num > 10:  # api限制不能大于10
             params['num'] = 10
+        logger.debug('1')
         try:
-            res = requests.get(url, params)
+            res = requests.get(url, params,**_REQUESTS_KWARGS)
+            logger.debug(res)
             setu_data = res.json()
+            logger.debug('2')
         except Exception as e:
             logger.error('api0 boom~')
             logger.error(e)
         else:
             if res.status_code == 200:
-                for data in setu_data['data']:
-                    filename = data['filename']
-                    if self.if_sent('https://cdn.jsdelivr.net/gh/laosepi/setu/pics_original/' + filename):  # 判断是否发送过
+                logger.debug('3')
+                for data in setu_data['posts']:
+                    id = data['id']
+                    file_url = data['file_url']
+                    if self.if_sent(id):  # 判断是否发送过
                         continue
-                    url_original = 'https://cdn.jsdelivr.net/gh/laosepi/setu/pics_original/' + filename
-                    msg = self.build_msg(data['title'], data['artwork'], data['author'], data['artist'],
-                                         data['page'], url_original)
-                    if config['path'] == '':
-                        if self.db_config['original']:
-                            sendMsg.send_pic(self.ctx, msg, url_original, flashPic=False, atUser=self.db_config['at'])
-                        else:
-                            sendMsg.send_pic(self.ctx, msg, 'https://cdn.jsdelivr.net/gh/laosepi/setu/pics/' + filename,
-                                             flashPic=False, atUser=self.db_config['at'])
-                    else:  # 本地base64
-                        sendMsg.send_pic(self.ctx, msg, '', config['path'] + filename, False,
-                                         self.db_config['at'])
+                    logger.debug('4')
+                    url_original = data['source']
+                    msg = self.build_msg(level='api0',title=data['tags'], author=data['author'],
+                                         url_original=url_original)
+                    logger.debug('5')
+                    with requests.get(file_url,**_REQUESTS_KWARGS) as resp:
+                        with open('./tmp.jpg', 'wb') as fd:
+                            fd.write(resp.content)
+                    logger.debug('6')
+                    sendMsg.send_pic(self.ctx, msg,picPath='./tmp.jpg')
+                    logger.debug('7')
                     self.api_0_realnum += 1
                 # else:
                 #     logger.warning('api0:{}'.format(res.status_code))
             logger.info(
-                '从yubanのapi获取到{}张setu  实际发送{}张'.format(setu_data['count'], self.api_0_realnum))  # 打印获取到多少条
+                '从yandeのapi获取到{}张setu  实际发送{}张'.format(len(setu_data['posts']), self.api_0_realnum))  # 打印获取到多少条
 
     def api_1(self):
         self.api1_toget_num = self.num - self.api_0_realnum
@@ -508,22 +521,17 @@ class Setu:
         else:  # 好友会话
             self.friend()
 
-    # @_freq  # 频率
+    @_freq  # 频率
     def send(self):  # 判断数量
-        self.api_2()
-        if len(self.tag) == 1:
+        if config["yanre_switch"]:
+            self.api_0()
+        if config['Lolicon_switch'] and len(self.tag) == 1:
             self.api_1()
-            return
+        self.api_2()
         if self.api_0_realnum == 0 and self.api_1_realnum == 0 and self.api_pixiv_realnum == 0:
             sendMsg.send_text(self.ctx, self.db_config['msg_notFind'], self.db_config['at_warning'])
             return
-        if self.api_pixiv_realnum < self.api_pixiv_toget_num:
-            sendMsg.send_text(self.ctx, self.db_config['msg_insufficient'].format(
-                tag=self.tag,
-                num=self.api_0_realnum + self.api_1_realnum + self.api_pixiv_realnum
-            ), self.db_config['at_warning'])
-        else:
-            return
+        return
 
 
 # ------------------------------权限db-------------
@@ -614,7 +622,6 @@ def receive_friend_msg(ctx: FriendMsg):
 
 
 @deco.queued_up
-@deco.ignore_botself
 def receive_group_msg(ctx: GroupMsg):
     group_info = re.search(pattern_setu, ctx.Content)  # 提取关键字
     delay = re.search('REVOKE\[(.*?)\]', ctx.Content)

@@ -14,7 +14,7 @@ from plugins.ioolib.send import Send
 _USERNAME = config["pixiv_username"]
 _PASSWORD = config["pixiv_password"]
 sendMsg = Send()
-pixiv_pattern = 'p?(|ixiv) ?(|d) (.+)'
+pixiv_pattern = '#p?(|ixiv) ?(|d) (.+)'
 
 
 class Pixiv:
@@ -25,7 +25,7 @@ class Pixiv:
         self.id = id
         self.ctx = ctx
         self.path = os.getcwd() + '/pixiv'
-        if config['pixiv']:
+        if config['pixiv_proxy']:
             _REQUESTS_KWARGS = {
                 'proxies': {
                     'https': config['proxy'],  # 'http://127.0.0.1:10809'  代理
@@ -106,7 +106,7 @@ class Pixiv:
             pixiv_db.insert({'illust_id': self.id, 'details': details,
                              'time': datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S')})
         msg = '标题:{}\r\nid {}\r\n类型:{}\r\n作者:{}\r\nid {}\r\n作品说明:{}\r\n发布日期:{}\r\n' \
-              '标签:{}\r\n页码:{}\r\n下载图片指令使用：p d {}'.format(details['title'], str(self.id), details['type'],
+              '标签:{}\r\n页码:{}\r\n下载图片指令使用：#p d {}'.format(details['title'], str(self.id), details['type'],
                                                          details['user']['name'], details['user']['id'],
                                                          details['caption'],
                                                          details['create_date'], details['tags'],

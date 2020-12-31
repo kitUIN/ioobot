@@ -16,6 +16,7 @@ renping = {}  # 人品记录
 sendMsg = Send()
 # ------------------正则------------------
 pattern_command = '#(.*?)'
+black_list = '#p'  # 防止与bot_pixiv.py重冲突
 
 
 class Sysinfo:
@@ -164,11 +165,13 @@ class Command:
                                     return
                             ret = '删除机器人管理员成功'
                         else:
-                            sendMsg.send_text(self.ctx, '无此命令')
-                            return
+                            if self.ctx.Content[:2] not in black_list:
+                                sendMsg.send_text(self.ctx, '无此命令')
+                                return
                 else:
-                    sendMsg.send_text(self.ctx, '无此命令')
-                    return
+                    if self.ctx.Content[:2] not in black_list:
+                        sendMsg.send_text(self.ctx, '无此命令')
+                        return
 
             # ------------------更新数据--------------------
             if ret != '':  # 如果有ret
@@ -177,9 +180,11 @@ class Command:
             group_config.update(self.db_raw, Q['GroupId'] == self.db['GroupId'])
         else:
             #  if lv == 3:
+            if self.ctx.Content[:2] not in black_list:
+                sendMsg.send_text(self.ctx, '找不到这个命令了，试试#帮助 吧')
+                return
             #  sendMsg.send_text(self.ctx, '¿没权限玩🐎呢¿')
-            sendMsg.send_text(self.ctx, '找不到这个命令了，试试#帮助 吧')
-            return
+
 
     def cmd(self, group, lv):  # todo 迁移 网易云识别，setu统计，
         if self.ctx.Content == '#sysinfo' or self.ctx.Content == '#运行状态' or self.ctx.Content == '#系统信息':  # 运行状态
@@ -215,10 +220,17 @@ class Command:
         elif self.ctx.Content == '#help' or self.ctx.Content == '#帮助':
             sendMsg.send_pic(self.ctx, '', '', 'look/help.png', False, False)
             return
+        elif self.ctx.Content[:5] == '#查看图片':
+            try:
+                sendMsg.send_pic(self.ctx, picUrl=self.ctx.Content[6:])
+            except:
+                pass
         elif group:
             self.cmd_group(lv)
         else:
-            sendMsg.send_text(self.ctx, '找不到这个命令了，试试#帮助 吧')
+            if self.ctx.Content[:2] not in black_list:
+                sendMsg.send_text(self.ctx, '找不到这个命令了，试试#帮助 吧')
+                return
 
     def group_or_temp(self):
         group_id = 0

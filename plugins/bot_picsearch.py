@@ -61,6 +61,8 @@ class PicSearch:
                     raw.title, raw.author, raw.member_id, raw.pixiv_id, raw.url)
                 if raw.pixiv_id != '':
                     msg += '\r\n使用命令获得原图：p d {}'.format(raw.pixiv_id)
+                logger.debug(msg)
+                logger.debug(raw.thumbnail)
                 logger.info('搜索成功')
                 sendMsg.send_pic(self.ctx, text=msg,picUrl=raw.thumbnail)
                 return
@@ -83,6 +85,7 @@ def cmd_picsearch(ctx):
             pic.anime_search(ctx.PicUrl)
     elif ctx.Content == '#以图搜番' or ctx.Content == '#以图搜图':
         sendMsg.send_text(ctx, '缺少图片呢')
+
     return
 
 
