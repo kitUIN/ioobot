@@ -1,6 +1,7 @@
 import os
 
 import botoy.decorators as deco
+import requests
 from PicImageSearch import SauceNAO, TraceMoe
 from botoy import FriendMsg, GroupMsg
 from loguru import logger
@@ -64,8 +65,13 @@ class PicSearch:
                 logger.debug(msg)
                 logger.debug(raw.thumbnail)
                 logger.info('搜索成功')
-                sendMsg.send_pic(self.ctx, text=msg,picUrl=raw.thumbnail)
-                return
+                if config['search_proxies']:  # 缩略图功能需要翻
+                    res = requests.get(raw.thumbnail, **self._REQUESTS_KWARGS)
+                    with open('example.jpg', 'wb') as f:
+                        f.write(res.content)
+                    sendMsg.send_pic(self.ctx, text=msg, picPath='example.jpg')
+                else:
+                    sendMsg.send_text(self.ctx, text=msg)
             else:
                 msg = '找不到了呢'
                 sendMsg.send_pic(self.ctx, msg, '', 'look/ex01.jpg')
