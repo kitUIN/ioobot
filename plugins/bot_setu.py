@@ -52,6 +52,7 @@ class pixivsetu:
             _REQUESTS_KWARGS = {}
         self.refresh_token = config['refresh_token']
         self.access_token = config['access_token']
+        self.now = datetime.datetime.now()
         self.api = AppPixivAPI(**_REQUESTS_KWARGS)
         if self.access_token == '' and self.refresh_token == '':  # 保存token
             self.api.login(self.username, self.password)
@@ -108,108 +109,127 @@ class pixivsetu:
     @staticmethod
     def _get_id(illust: list) -> dict:  # 用于查重
         ids = dict()
-        for x in range(len(illust)):
-            ids[x] = illust[x]['id']
-        return ids
+        try:
+            for x in range(len(illust)):
+                ids[x] = illust[x]['id']
+            return ids
+        except:
+            pass
 
-    def inform_build(self, date):
+    def inform_build(self, date):  # 储存排行榜数据
         json_result = self.api.illust_ranking(mode='day', date=date)
+
         illusts1 = json_result.illusts
-        rank.insert({'date': date, 'r18': False, 'illusts': illusts1})
+        if illusts1:
+            rank.insert({'date': date, 'r18': False, 'illusts': illusts1})
+        else:
+            logger.error('排行榜加载错误，请检查')
         json_result = self.api.illust_ranking(mode='day_r18', date=date)
         illusts2 = json_result.illusts
-        rank.insert({'date': date, 'r18': True, 'illusts': illusts2})
-
-    def rank_build(self, num=1):
-        now = datetime.datetime.now() - datetime.timedelta(days=1)
+        if illusts2:
+            rank.insert({'date': date, 'r18': True, 'illusts': illusts2})
+        else:
+            logger.error('排行榜加载错误，请检查')
+    def rank_build(self, num=1):  # 获取排行榜
+        now = self.now - datetime.timedelta(days=1)
         date = now.strftime('%Y-%m-%d')
         while num > 0:
             pixiv_raw = rank.search(Q['date'] == date)
             if pixiv_raw:
-                time = now - datetime.timedelta(days=1)
-                date = time.strftime('%Y-%m-%d')
-                logger.info(date)
+                now = now - datetime.timedelta(days=1)
+                date = now.strftime('%Y-%m-%d')
+                logger.info('{}已存在,跳过'.format(date))
             else:
                 self.inform_build(date)
                 logger.info('{}排行榜导入数据库'.format(date))
-                time = now - datetime.timedelta(days=1)
-                date = time.strftime('%Y-%m-%d')
+                now = now - datetime.timedelta(days=1)
+                date = now.strftime('%Y-%m-%d')
                 num -= 1
 
-    def illusts_build(self, illusts, retry, r18):
-        if retry == 0:
-            return
-        ids = self._get_id(illusts)
-        for i in ids:
-            pixiv_raw = db_tmp.table('pixivlist').search(Q['illust_id'] == ids[i])
-            if pixiv_raw:
-                continue
-            else:
-                self.id = ids[i]
-                pic = illusts[i]['image_urls']['square_medium']
-                self.api.download(pic, path=self.path, fname=str(self.id) + '.jpg')
-                details = self._get_details(illusts[i])
-                if r18 < 1 and 'R-18' in details['tags']:
-                    continue
-                msg = '标题:{}\r\nid {}\r\n作者:{}\r\nid {}\r\n标签:{}\r\n下载原图指令使用：\r\np d {}'.format(
-                    details['title'], str(self.id), details['user']['name'], details['user']['id'], details['tags'],
-                    str(self.id))
-                if self.ctx.__class__.__name__ == 'GroupMsg':
-                    msg += '\r\nREVOKE[25]'
-                sendMsg.send_pic(self.ctx, text=msg, picPath=self.path + '/' + str(self.id) + '.jpg')
-                logger.info('ID{}导入到数据库，已发送'.format(str(self.id)))
-                db_tmp.table('pixivlist').insert({'illust_id': self.id, 'details': details,
-                                                  'time': datetime.datetime.strftime(datetime.datetime.now(),
-                                                                                     '%Y-%m-%d %H:%M:%S')})
-                pixiv_db.insert({'illust_id': self.id, 'details': details,
-                                 'time': datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S')})
-                retry -= 1
-                if retry == 0:
-                    return 0
-        return retry
-
-    def retry_send1(self, tagss, retry, r18):  # 发送主体1(循环)
+    def illusts_build(self, illusts, retry, r18, flag=False):  # 建立发送数据
+        response = list()
+        data = dict()
         if r18 >= 1:
-            tagss += 'R-18'
-        logger.debug('搜索标签:'.format(tagss))
-        json_result = self.api.search_illust(tagss, search_target='exact_match_for_tags')
+            mode = True
+        else:
+            mode = False
+        while len(response) != retry:
+            ids = self._get_id(illusts)
+            for i in ids:
+                pixiv_raw = db_tmp.table('pixivlist').search(Q['illust_id'] == ids[i])
+                if pixiv_raw:
+                    continue
+                else:
+                    self.id = ids[i]
+                    pic = illusts[i]['image_urls']['square_medium']
+                    self.api.download(pic, path=self.path, fname=str(self.id) + '.jpg')
+                    details = self._get_details(illusts[i])
+                    if r18 < 1 and 'R-18' in details['tags']:
+                        continue
+                    msg = '标题:{}\r\nid {}\r\n作者:{}\r\nid {}\r\n标签:{}\r\n下载原图指令使用：\r\n#p d {}'.format(
+                        details['title'], str(self.id), details['user']['name'], details['user']['id'], details['tags'],
+                        str(self.id))
+                    data['msg'] = msg
+                    data['picPath'] = self.path + '/' + str(self.id) + '.jpg'
+                    response.append(data)
+                    logger.info('ID{}导入到数据库'.format(str(self.id)))
+                    db_tmp.table('pixivlist').insert({'illust_id': self.id, 'details': details,
+                                                      'time': datetime.datetime.strftime(self.now,
+                                                                                         '%Y-%m-%d %H:%M:%S')})
+                    pixiv_db.insert({'illust_id': self.id, 'details': details,
+                                     'time': datetime.datetime.strftime(self.now, '%Y-%m-%d %H:%M:%S')})
+                    if len(response) == retry:
+                        return response
+            if flag:
+                now = self.now - datetime.timedelta(days=1)
+                date = now.strftime('%Y-%m-%d')
+                illust = rank.search((Q['date'] == date) & (Q['r18'] == mode))
+                illusts = illust[0]['illusts']
+                self.rank_build()
+        return response
+
+    def retry_send1(self, tag, retry, r18):  # 发送主体1(循环)
+        if r18 >= 1:
+            tag += ' R-18'
+        logger.debug('搜索标签:{}'.format(tag))
+        json_result = self.api.search_illust(tag, search_target='exact_match_for_tags')
         illusts = json_result.illusts
         if illusts is None:  # 错误报告
             logger.error(json_result['error'])
             return
-        self.illusts_build(illusts, retry, r18)
-        return
+        return self.illusts_build(illusts, retry, r18)
 
     def retry_send2(self, retry, r18):  # 发送主体2(循环)
         if r18 >= 1:
             mode = True
         else:
             mode = False
-        now = datetime.datetime.now()
-        cishu = retry
-        while cishu > 0:
-            time = now - datetime.timedelta(days=1)
-            date = time.strftime('%Y-%m-%d')
-            illusts = rank.search((Q.date == date) & (Q.r18 == mode))
-            if illusts:
-                illusts = illusts[0]['illusts']
-                cishu = self.illusts_build(illusts, cishu, r18)
-            else:
-
-                self.rank_build()
+        now = self.now - datetime.timedelta(days=1)
+        date = now.strftime('%Y-%m-%d')
+        illust = rank.search((Q['date'] == date) & (Q['r18'] == mode))
+        if illust:
+            illusts = illust[0]['illusts']
+            response = self.illusts_build(illusts, retry, r18, True)
+            return response
+        elif illust is not None:
+            self.rank_build()
+            illust = rank.search((Q['date'] == date) & (Q['r18'] == mode))
+            illusts = illust[0]['illusts']
+            return self.illusts_build(illusts, retry, r18, True)
 
     def send_pixiv(self, tags=None, r18=0, retry=1):
-        if tags is None:
-            tags = []
-            tagss = ''
+        logger.debug(tags)
+        tag = ''
         if tags:  # 有标签
-            tagss = ''
             for x in tags:
-                tagss += x + ''
-            tagss = tagss[len(tagss) - 1:]
-            self.retry_send1(tagss, retry, r18)
+                tag += x + ' '
+            tag = tag[:len(tag) - 1]
+            logger.debug(tags)
+            logger.debug('tags:' + tag)
+            data = self.retry_send1(tag, retry, r18)
         else:
-            self.retry_send2(retry, r18)
+            data = self.retry_send2(retry, r18)
+        return data
 
 
 class Setu:
@@ -244,8 +264,6 @@ class Setu:
         else:
             msg = 'msg配置错误,请联系管理员'
             return msg
-        if self.db_config['showTag'] and len(self.tag) >= 1:  # 显示tag
-            msg += '\r\nTAG:{}'.format(self.tag)
         if self.db_config['type'] == 'group':
             if self.db_config['revoke']:  # 群聊并且开启撤回
                 msg += '\r\nREVOKE[{}]'.format(self.db_config['revoke'])
@@ -267,55 +285,47 @@ class Setu:
             db_tmp.table('sentlist').insert({'id': self.db_config['callid'], 'time': time.time(), 'pic_id': id})
             return False
 
-    def api_0(self):  # https://yande.re/
+    def api_0(self):  # https://yande.re/ 速度极其慢，不建议使用
         url = 'https://yande.re/post.json'
         if config['yanre_proxy']:
             _REQUESTS_KWARGS = {
                 'proxies': {
                     'https': config['proxy'],  # 'http://127.0.0.1:10809'  代理
                 }
-                }
+            }
         else:
             _REQUESTS_KWARGS = dict()
         if len(self.tag) > 0:
             tag_switch = 1
         else:
             tag_switch = 0
-        params = {'api_version':2,
+        params = {'api_version': 2,
                   'tags': self.tag,
                   'limit': self.num,
                   'include_tags': tag_switch,
                   'filter': 1}
         if self.num > 10:  # api限制不能大于10
             params['num'] = 10
-        logger.debug('1')
         try:
-            res = requests.get(url, params,**_REQUESTS_KWARGS)
-            logger.debug(res)
+            res = requests.get(url, params, **_REQUESTS_KWARGS)
             setu_data = res.json()
-            logger.debug('2')
         except Exception as e:
             logger.error('api0 boom~')
             logger.error(e)
         else:
             if res.status_code == 200:
-                logger.debug('3')
                 for data in setu_data['posts']:
                     id = data['id']
                     file_url = data['file_url']
                     if self.if_sent(id):  # 判断是否发送过
                         continue
-                    logger.debug('4')
                     url_original = data['source']
-                    msg = self.build_msg(level='api0',title=data['tags'], author=data['author'],
+                    msg = self.build_msg(level='api0', title=data['tags'], author=data['author'],
                                          url_original=url_original)
-                    logger.debug('5')
-                    with requests.get(file_url,**_REQUESTS_KWARGS) as resp:
+                    with requests.get(file_url, **_REQUESTS_KWARGS) as resp:
                         with open('./tmp.jpg', 'wb') as fd:
                             fd.write(resp.content)
-                    logger.debug('6')
-                    sendMsg.send_pic(self.ctx, msg,picPath='./tmp.jpg')
-                    logger.debug('7')
+                    sendMsg.send_pic(self.ctx, msg, picPath='./tmp.jpg')
                     self.api_0_realnum += 1
                 # else:
                 #     logger.warning('api0:{}'.format(res.status_code))
@@ -381,13 +391,20 @@ class Setu:
             tags = self.tag
         else:
             tags = []
-        try:
-            logger.info('向Pixivのapi请求发送{}张'.format(self.api_pixiv_toget_num))
-            api2.send_pixiv(tags, r18, self.api_pixiv_toget_num)
-            self.api_pixiv_realnum = self.api_pixiv_toget_num
-        except Exception as e:
-            logger.error('api2 boom~')
-            logger.error(e)
+        logger.debug(tags)
+        data = api2.send_pixiv(tags, r18, self.api_pixiv_toget_num)
+        if data:
+            for i in data:
+                if self.db_config['type'] == 'group':
+                    if self.db_config['revoke']:  # 群聊并且开启撤回
+                        i['msg'] += '\r\nREVOKE[{}]'.format(self.db_config['revoke'])
+                    if self.db_config['at']:
+                        i['msg'] = '\r\n' + i['msg']
+                sendMsg.send_pic(self.ctx, text=i['msg'], picPath=i['picPath'], atUser=self.db_config['at'])
+                self.api_pixiv_realnum += 1
+        else:
+            logger.error('无返回数据')
+        logger.info('向Pixivのapi请求发送{}张,实际发送{}'.format(self.api_pixiv_toget_num, self.api_pixiv_realnum))
 
     def _freq(func):
         def wrapper(self, *args, **kwargs):
@@ -498,13 +515,11 @@ class Setu:
         else:  # 如果没有自定义 就是默认行为
             # pass#
             self.db_config.update({
-                'setuinfoLevel': 3,
+                'setuDefaultLevel': 3,
                 'original': False,
-                'setuDefaultLevel': 1,
-                'clearSentTime': 600,
+                'clearSentTime': 36000,
                 'at': False,
                 'at_warning': False,  # @
-                'showTag': True,
                 'msg_inputError': '必须是小于3的数字哦~',  # 非int
                 'msg_notFind': '淦 你的xp好奇怪啊',  # 没结果
                 'msg_tooMuch': '要这么多色图你怎么不冲死呢¿',  # 大于最大值
@@ -541,19 +556,17 @@ class Getdata:
         data['managers'] = []  # 所有的管理者(可以设置bot功能的)
         # -----------------------------------------------------
         data['setuDefaultLevel'] = {'group': 1, 'temp': 3}  # 默认等级 0:正常 1:性感 2:色情 3:All
-        data['setuinfoLevel'] = {'group': 2, 'temp': 3}  # setu信息完整度(0:不显示图片信息)
         data['original'] = {'group': False, 'temp': False}  # 是否原图
         data['setu'] = {'group': True, 'temp': True}  # 色图功能开关
         data['r18'] = {'group': False, 'temp': True}  # 是否开启r18
         data['freq'] = 0  # 频率 (次)
         data['refreshTime'] = 60  # 刷新时间 (s)
-        data['clearSentTime'] = 900  # 刷新sent时间 (s)
+        data['clearSentTime'] = 36000  # 刷新sent时间 (s)
         data['maxnum'] = {'group': 3, 'temp': 10}  # 一次最多数量
         # data['MsgCount'] = {'text': 0, 'pic': 0, 'voice': 0}  # 消息数量
         data['revoke'] = {'group': 20, 'temp': 0}  # 撤回消息延时(0为不撤回)
         data['at'] = False  # @
         data['at_warning'] = False  # @
-        data['showTag'] = True  # 显示tag
         data['msg_inputError'] = '必须是小于3的数字哦~'  # 非int
         data['msg_notFind'] = '淦 你的xp好奇怪啊'  # 没结果
         data['msg_tooMuch'] = '要这么多色图你怎么不冲死呢¿'  # 大于最大值
@@ -627,6 +640,7 @@ def receive_group_msg(ctx: GroupMsg):
     delay = re.search('REVOKE\[(.*?)\]', ctx.Content)
     if group_info:
         Setu(ctx, group_info[2], group_info[1], group_info[3]).main()
+        logger.debug(group_info[2])
     if delay:
         delay = min(int(delay[1]), 90)
         time.sleep(delay)

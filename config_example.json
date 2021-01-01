@@ -7,7 +7,7 @@
   "log_file": false,
   "superAdmin": 0,
   "path": "",
-  "yanre_switch": true,
+  "yanre_switch": false,
   "yanre_proxy": true,
   "LoliconAPIKey": "",
   "Lolicon_switch": false,

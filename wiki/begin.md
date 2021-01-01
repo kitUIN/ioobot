@@ -9,7 +9,7 @@ PS：测试环境:
 - 配置环境  
 - `pip3 install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple`
 **2.填写配置文件**  
-文件`config.json`
+文件`config_example.json`
 ```
 {
   "BotQQ": 0,                   #[botoy]你的机器人号（必填）
@@ -20,7 +20,10 @@ PS：测试环境:
   "log_file": false,            #[botoy]日志输出
   "superAdmin": 0,              #[权限模块]超级管理员（必填）
   "path": "",                   #[setu模块]本地图片地址
+  "yanre_switch": false,        #[setu模块]yanre色图库开关(需梯子)
+  "yanre_proxy": true,          #[setu模块]yanre色图库代理开关
   "LoliconAPIKey": "",          #[setu模块]LOLICON的apikey
+  "Lolicon_switch": false,      #[setu模块]LOLICON的开关
   "SauceNAOKEY": "",            #[识图姬]SauceNAO的访问key
   "search_proxies": false,      #[识图姬]代理开关
   "proxy": "http://127.0.0.1:10809",#[识图姬][pixiv][setu模块]代理端口
@@ -28,6 +31,7 @@ PS：测试环境:
   "netease_username": "",       #[网易云vip解析]账号
   "netease_password": "",       #[网易云vip解析]密码
   "pixiv": false,               #[pixiv]开关(需要梯子)
+  "pixiv_proxy": true,          #[pixiv]代理开关
   "pixiv_username": "",         #[pixiv]账号
   "pixiv_password": "",         #[pixiv]密码
   "refresh_token": "",          #[pixiv]token
@@ -38,8 +42,9 @@ PS：测试环境:
   }
 }
 ```
-对botoy有更多要求的可以更改`botoy.json`
-
+对botoy有更多要求的可以更改`botoy.json`  
+PS：也可以启动一次，会自动生成config.json  
+PS:关于更新配置文件的话，clone新的ioobot版本后会自动添加在配置文件中。  
 **3.启动插件**  
 先确认OPQBOT正常运行
 执行`./run.py`

@@ -4,7 +4,7 @@
 |#以图搜番 <图片>| |√|√|根据图片搜索番剧（需要夹带图片）|[识图姬](https://github.com/kitUIN/ioobot/wiki/command#识图姬)|
 |#以图搜源 <图片>| |√|√|根据图片搜索原图（需要夹带图片）|[识图姬](https://github.com/kitUIN/ioobot/wiki/command#识图姬)|
 |来<数字>张<标签1><标签2>(r18)色图| |√|√|发出<数字>张<标签1><标签2>（r18）色图|[setu](https://github.com/kitUIN/ioobot/wiki/command#setu模块)|
-|pixiv <作品id>|p <作品id>|√|√|搜索作品(作品id搜索)主要配合识图姬下载原图|[pixiv](https://github.com/kitUIN/ioobot/wiki/command#pixiv模块)|
+|#pixiv <作品id>|#p <作品id>|√|√|搜索作品(作品id搜索)主要配合识图姬下载原图|[pixiv](https://github.com/kitUIN/ioobot/wiki/command#pixiv模块)|
 |复读姬模式| |√|×|开启复读姬|[fudu](https://github.com/kitUIN/ioobot/wiki/command#fudu模块)|
 |砸烂复读机| |√|×|关闭复读姬|[fudu](https://github.com/kitUIN/ioobot/wiki/command#fudu模块)|
 |#v<版本号>|#v|√|√|查看版本与更新日志（不填默认为当前版本）|[版本号](https://github.com/kitUIN/ioobot/wiki/command#版本号)|
