@@ -227,7 +227,7 @@ class Command:
                     sendMsg.send_pic(self.ctx, picUrl=self.ctx.Content[6:].strip())
                 except:
                     logger.error('查看失败')
-            elif self.ctx.Content[6:7] == '1':
+            elif self.ctx.Content[6:7] == '2':
                 try:
                     _REQUESTS_KWARGS = {
                         'proxies': {
