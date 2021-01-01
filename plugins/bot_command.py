@@ -222,18 +222,20 @@ class Command:
             sendMsg.send_pic(self.ctx, '', '', 'look/help.png', False, False)
             return
         elif self.ctx.Content[:5] == '#查看图片':  # 测试
-            if self.ctx.Content[6:7] == '1':
+            if self.ctx.Content[5:6] == '1':
                 try:
                     sendMsg.send_pic(self.ctx, picUrl=self.ctx.Content[6:].strip())
                 except:
                     logger.error('查看失败')
-            elif self.ctx.Content[6:7] == '2':
+            elif self.ctx.Content[5:6] == '2':
                 try:
-                    _REQUESTS_KWARGS = {
-                        'proxies': {
-                            'https': config['proxy'],  # 'http://127.0.0.1:10809'  代理
-                        },
-                    }
+                    _REQUESTS_KWARGS = {}
+                    if config['search_proxies']:
+                        _REQUESTS_KWARGS = {
+                            'proxies': {
+                                'https': config['proxy'],  # 'http://127.0.0.1:10809'  代理
+                            },
+                        }
                     url = self.ctx.Content[6:].strip()
                     res = requests.get(url, **_REQUESTS_KWARGS)
                     with open('pic.jpg', 'wb') as f:
