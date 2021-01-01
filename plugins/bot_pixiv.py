@@ -126,9 +126,7 @@ class Pixiv:
         # time.sleep(3)
         # os.remove(pic_path)
 
-
-@deco.queued_up
-def receive_friend_msg(ctx: FriendMsg):
+def pixiv_react(ctx):
     pixiv_info = re.match(pixiv_pattern, ctx.Content)
     if pixiv_info:
         if config['pixiv']:
@@ -141,29 +139,19 @@ def receive_friend_msg(ctx: FriendMsg):
                     logger.info('开始下载')
                     id = int(pixiv_info[3])
                     Pixiv(_USERNAME, _PASSWORD, id, ctx).get_illust()
+                    Pixiv(_USERNAME, _PASSWORD, id, ctx).send_original()
             except Exception as e:
                 logger.error(e)
         else:
             logger.error('配置文件未开启pixiv下载功能')
     return
+
+
+@deco.queued_up
+def receive_friend_msg(ctx: FriendMsg):
+    pixiv_react(ctx)
 
 
 @deco.queued_up
 def receive_group_msg(ctx: GroupMsg):
-    pixiv_info = re.match(pixiv_pattern, ctx.Content)
-    if pixiv_info:
-        if config['pixiv']:
-            try:
-                if pixiv_info[2]:
-                    logger.info('开始搜索')
-                    id = int(pixiv_info[3])
-                    Pixiv(_USERNAME, _PASSWORD, id, ctx).send_original()
-                elif pixiv_info[3]:
-                    logger.info('开始下载')
-                    id = int(pixiv_info[3])
-                    Pixiv(_USERNAME, _PASSWORD, id, ctx).get_illust()
-            except Exception as e:
-                logger.error(e)
-        else:
-            logger.error('配置文件未开启pixiv下载功能')
-    return
+    pixiv_react(ctx)
