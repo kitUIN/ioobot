@@ -13,6 +13,10 @@
 |#今日人品|#jrrp|√|√|获得今日人品（0--100）|[常规命令](https://github.com/kitUIN/ioobot/wiki/command#常规命令)|
 |#留言 <内容>|#ly <内容>|√|√|给开花✿人留言或提建议|[常规命令](https://github.com/kitUIN/ioobot/wiki/command#常规命令)|
 |#打赏||√|√|请开花✿人喝奶茶|[常规命令](https://github.com/kitUIN/ioobot/wiki/command#常规命令)|
+|#插件列表| |√|×|查看插件列表(需要是[superAdmin](https://github.com/kitUIN/ioobot/config_example.json))|[常规命令](https://github.com/kitUIN/ioobot/wiki/command#常规命令)|
+|#插件重置| |√|×|重置插件(需要是[superAdmin](https://github.com/kitUIN/ioobot/config_example.json))|[常规命令](https://github.com/kitUIN/ioobot/wiki/command#常规命令)|
+|#插件禁用 <插件名字>| |√|×|禁用插件(需要是[superAdmin](https://github.com/kitUIN/ioobot/config_example.json))|[常规命令](https://github.com/kitUIN/ioobot/wiki/command#常规命令)|
+|#插件启动 <插件名字>| |√|×|启用插件(需要是[superAdmin](https://github.com/kitUIN/ioobot/config_example.json))|[常规命令](https://github.com/kitUIN/ioobot/wiki/command#常规命令)|
 |#开启群聊r18| |√|×|开启r18 可以调用"来张r18色图"|[权限](https://github.com/kitUIN/ioobot/wiki/command#权限模块)|
 |#关闭群聊r18| |√|×|关闭r18 不能调用"来张r18色图"|[权限](https://github.com/kitUIN/ioobot/wiki/command#权限模块)|
 |#开启私聊r18| |√|×|可以通过群临时会话调用"来张r18色图"|[权限](https://github.com/kitUIN/ioobot/wiki/command#权限模块)|
@@ -23,9 +27,12 @@
 |#关闭群聊色图| |√|×|不能通过群聊问bot要色图|[权限](https://github.com/kitUIN/ioobot/wiki/command#权限模块)|
 
 ## 识图姬
-
+`#以图搜图`  
+使用SauceNAO引擎，由于大陆限制，需要梯子才能看到缩略图(`config.json`中的`search_proxies`是开关)
 ## setu模块
-
+ - api0(_yanre_)为国外色图库（访问慢） 
+ - api1(_Lolicon_)为国内色图库（访问慢）
+ - api2(_pixiv_)为pixiv（访问还行）
 ## 权限模块
 
 ## Pixiv模块

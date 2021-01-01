@@ -3,9 +3,12 @@ from botoy import FriendMsg, GroupMsg
 
 from plugins.ioolib.send import Send
 
+
+
 sendMsg = Send()
-Version = "v2.1.0"
+Version = "v2.1.1"
 version = {
+    "v2.1.1":"(+)修复识图姬缩略图错误\r\n(+)配置文件更新自动检测\r\n(+)插件查看完善返回\r\n(+)优化色图，pixiv运行\r\n(+)修复pixiv色图发送错误\r\n(+)修复标签识别错误",
     "v2.1.0": "(+)Pixiv R18解封，增加漫画下载\r\n（+）增加以图搜源代理模式",
     "v2.0.0": "(+)重构代码，改用botoy支持库\r\n(+)插件化\r\n(+)旧功能迁移完成\r\n(+)Pixiv原图下载(+)以图搜源拆分细化",
     "v1.2.0": "(+)支持网易云vip解析\r\n(+)添加今日人品\r\n(+)添加留言功能\r\n(+)bug修复&调整\r\n- 表情包更新\r\n- 复读姬bug修复",
@@ -34,6 +37,8 @@ def ver(ctx):
         vers = vers + version['v1.1.2']
     elif ctx.Content == '#v2.0.0':
         vers = vers + version['v2.0.0']
+    elif ctx.Content == '#v2.1.0':
+        vers = vers + version['v2.1.0']
     else:
         vers = vers + version[Version]
     return vers

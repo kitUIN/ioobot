@@ -43,7 +43,7 @@ PS：测试环境:
 }
 ```
 对botoy有更多要求的可以更改`botoy.json`  
-PS：也可以启动一次，会自动生成config.json  
+PS：也可以启动一次，会自动生成`config.json`  
 PS:关于更新配置文件的话，clone新的ioobot版本后会自动添加在配置文件中。  
 **3.启动插件**  
 先确认OPQBOT正常运行

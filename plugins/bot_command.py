@@ -6,6 +6,7 @@ import time
 import botoy.decorators as deco
 import cpuinfo
 import psutil
+import requests
 from botoy import FriendMsg, GroupMsg, EventMsg
 
 from plugins.ioolib.dbs import *
@@ -220,11 +221,26 @@ class Command:
         elif self.ctx.Content == '#help' or self.ctx.Content == '#帮助':
             sendMsg.send_pic(self.ctx, '', '', 'look/help.png', False, False)
             return
-        elif self.ctx.Content[:5] == '#查看图片':
-            try:
-                sendMsg.send_pic(self.ctx, picUrl=self.ctx.Content[6:])
-            except:
-                pass
+        elif self.ctx.Content[:5] == '#查看图片':  # 测试
+            if self.ctx.Content[6:7] == '1':
+                try:
+                    sendMsg.send_pic(self.ctx, picUrl=self.ctx.Content[6:].strip())
+                except:
+                    logger.error('查看失败')
+            elif self.ctx.Content[6:7] == '1':
+                try:
+                    _REQUESTS_KWARGS = {
+                        'proxies': {
+                            'https': config['proxy'],  # 'http://127.0.0.1:10809'  代理
+                        },
+                    }
+                    url = self.ctx.Content[6:].strip()
+                    res = requests.get(url, **_REQUESTS_KWARGS)
+                    with open('pic.jpg', 'wb') as f:
+                        f.write(res.content)
+                    sendMsg.send_pic(self.ctx, picPath='pic.jpg')
+                except:
+                    logger.error('查看失败')
         elif group:
             self.cmd_group(lv)
         else:
