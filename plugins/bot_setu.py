@@ -130,6 +130,7 @@ class pixivsetu:
             rank.insert({'date': date, 'r18': True, 'illusts': illusts2})
         else:
             logger.error('排行榜加载错误，请检查')
+
     def rank_build(self, num=1):  # 获取排行榜
         now = self.now - datetime.timedelta(days=1)
         date = now.strftime('%Y-%m-%d')
@@ -248,20 +249,22 @@ class Setu:
         self.db_config = {}
 
     def build_msg(self,
-                  level,
                   title='',
                   artworkid=0,
                   author='',
                   artistid=0,
                   page=1,
                   url_original=''):
-        if level == 'api0':  # yande.re
-            msg = '标题:{title}\r\n作者:{author}\r\n原图:{url_original}\r\n(需要科学上网)'.format(
+        try:
+            msg = '标题:{title}\r\n{purl}\r\npage:{page}\r\n作者:{author}\r\n{uurl}\r\n原图:{url_original}'.format(
                 title=title,
+                purl='www.pixiv.net/artworks/' + str(artworkid),
+                page=page,
                 author=author,
+                uurl='www.pixiv.net/users/' + str(artistid),
                 url_original=url_original
             )
-        else:
+        except:
             msg = 'msg配置错误,请联系管理员'
             return msg
         if self.db_config['type'] == 'group':
@@ -285,52 +288,43 @@ class Setu:
             db_tmp.table('sentlist').insert({'id': self.db_config['callid'], 'time': time.time(), 'pic_id': id})
             return False
 
-    def api_0(self):  # https://yande.re/ 速度极其慢，不建议使用
-        url = 'https://yande.re/post.json'
-        if config['yanre_proxy']:
-            _REQUESTS_KWARGS = {
-                'proxies': {
-                    'https': config['proxy'],  # 'http://127.0.0.1:10809'  代理
-                }
-            }
-        else:
-            _REQUESTS_KWARGS = dict()
-        if len(self.tag) > 0:
-            tag_switch = 1
-        else:
-            tag_switch = 0
-        params = {'api_version': 2,
-                  'tags': self.tag,
-                  'limit': self.num,
-                  'include_tags': tag_switch,
-                  'filter': 1}
+    def api_0(self):
+        url = 'http://api.yuban10703.xyz:2333/setu_v4'
+        params = {'level': self.setu_level,
+                  'num': self.num,
+                  'tag': self.tag}
         if self.num > 10:  # api限制不能大于10
             params['num'] = 10
         try:
-            res = requests.get(url, params, **_REQUESTS_KWARGS)
+            res = requests.get(url, params)
             setu_data = res.json()
         except Exception as e:
             logger.error('api0 boom~')
             logger.error(e)
         else:
             if res.status_code == 200:
-                for data in setu_data['posts']:
-                    id = data['id']
-                    file_url = data['file_url']
-                    if self.if_sent(id):  # 判断是否发送过
+                for data in setu_data['data']:
+                    filename = data['filename']
+                    if self.if_sent(filename):  # 判断是否发送过
                         continue
-                    url_original = data['source']
-                    msg = self.build_msg(level='api0', title=data['tags'], author=data['author'],
-                                         url_original=url_original)
-                    with requests.get(file_url, **_REQUESTS_KWARGS) as resp:
-                        with open('./tmp.jpg', 'wb') as fd:
-                            fd.write(resp.content)
-                    sendMsg.send_pic(self.ctx, msg, picPath='./tmp.jpg')
+                    msg = self.build_msg(title=data['title'], artworkid=data['artwork'], author=data['author'],
+                                         artistid=data['artist'],
+                                         page=data['page'], url_original=data['original'])
+                    if config['path'] == '':
+                        if self.db_config['original']:
+                            sendMsg.send_pic(self.ctx, msg, data['original'], flashPic=False,
+                                             atUser=self.db_config['at'])
+                        else:
+                            sendMsg.send_pic(self.ctx, msg, data['large'],
+                                             flashPic=False, atUser=self.db_config['at'])
+                    else:  # 本地base64
+                        sendMsg.send_pic(self.ctx, msg, '', config['path'] + filename, False,
+                                         self.db_config['at'])
                     self.api_0_realnum += 1
                 # else:
                 #     logger.warning('api0:{}'.format(res.status_code))
             logger.info(
-                '从yandeのapi获取到{}张setu  实际发送{}张'.format(len(setu_data['posts']), self.api_0_realnum))  # 打印获取到多少条
+                '从yubanのapi获取到{}张setu  实际发送{}张'.format(setu_data['count'], self.api_0_realnum))  # 打印获取到多少条
 
     def api_1(self):
         self.api1_toget_num = self.num - self.api_0_realnum
@@ -363,7 +357,7 @@ class Setu:
                 for data in setu_data['data']:
                     if self.if_sent(data['url']):  # 判断是否发送过
                         continue
-                    msg = self.build_msg(data['title'], data['pid'], data['author'], data['uid'], data['p'], '无~')
+                    msg = self.build_msg(data['title'], data['pid'], data['author'], data['uid'], data['p'], url_original='无~')
                     logger.info(msg)
                     logger.info(data['url'])
                     sendMsg.send_pic(self.ctx, msg, data['url'], flashPic=False, atUser=self.db_config['at'])
@@ -386,8 +380,7 @@ class Setu:
             r18 = 1
         else:
             r18 = 0
-        if not config['pixiv']:
-            return
+
         api2 = pixivsetu(_USERNAME, _PASSWORD, self.ctx)
         if len(self.tag) != 1 or (len(self.tag[0]) != 0 and not self.tag[0].isspace()):  # 如果tag不为空(字符串字数不为零且不为空)
             tags = self.tag
@@ -540,11 +533,11 @@ class Setu:
 
     @_freq  # 频率
     def send(self):  # 判断数量
-        if config["yanre_switch"]:
-            self.api_0()
+        self.api_0()
         if config['Lolicon_switch'] and len(self.tag) == 1:
             self.api_1()
-        self.api_2()
+        if ['pixiv']:
+            self.api_2()
         if self.api_0_realnum == 0 and self.api_1_realnum == 0 and self.api_pixiv_realnum == 0:
             sendMsg.send_text(self.ctx, self.db_config['msg_notFind'], self.db_config['at_warning'])
             return
