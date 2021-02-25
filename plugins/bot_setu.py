@@ -386,6 +386,8 @@ class Setu:
             r18 = 1
         else:
             r18 = 0
+        if not config['pixiv']:
+            return
         api2 = pixivsetu(_USERNAME, _PASSWORD, self.ctx)
         if len(self.tag) != 1 or (len(self.tag[0]) != 0 and not self.tag[0].isspace()):  # 如果tag不为空(字符串字数不为零且不为空)
             tags = self.tag

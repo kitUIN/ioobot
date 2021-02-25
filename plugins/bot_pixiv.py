@@ -131,14 +131,14 @@ def pixiv_react(ctx):
     if pixiv_info:
         if config['pixiv']:
             try:
-                if pixiv_info[2]:
-                    logger.info('开始搜索')
-                    id = int(pixiv_info[3])
-                    Pixiv(_USERNAME, _PASSWORD, id, ctx).send_original()
-                elif pixiv_info[3]:
+                if pixiv_info[3]:
                     logger.info('开始下载')
                     id = int(pixiv_info[3])
                     Pixiv(_USERNAME, _PASSWORD, id, ctx).get_illust()
+                    Pixiv(_USERNAME, _PASSWORD, id, ctx).send_original()
+                elif pixiv_info[2]:
+                    logger.info('开始搜索')
+                    id = int(pixiv_info[3])
                     Pixiv(_USERNAME, _PASSWORD, id, ctx).send_original()
             except Exception as e:
                 logger.error(e)
